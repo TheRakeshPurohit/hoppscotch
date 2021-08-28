@@ -1,97 +1,185 @@
 <template>
-  <footer class="footer">
-    <div class="flex justify-between items-center flex-1">
-      <span class="flex font-mono" style="align-items: start">
-        <a
-          class="footer-link hidden md:inline-flex"
-          href="https://www.netlify.com"
-          target="_blank"
-          rel="noopener"
-        >
-          Powered by Netlify
-        </a>
-        <span class="hidden md:inline-flex">
-          <a
-            class="footer-link"
-            href="https://oss.capital/?ref=hoppscotch"
-            target="_blank"
-            rel="noopener"
+  <div>
+    <div class="flex justify-between">
+      <div class="flex">
+        <ButtonSecondary
+          v-tippy="{ theme: 'tooltip' }"
+          :title="LEFT_SIDEBAR ? $t('hide.sidebar') : $t('show.sidebar')"
+          svg="sidebar"
+          :class="{ 'transform -rotate-180': !LEFT_SIDEBAR }"
+          @click.native="LEFT_SIDEBAR = !LEFT_SIDEBAR"
+        />
+        <ButtonSecondary
+          v-tippy="{ theme: 'tooltip' }"
+          :title="`${
+            ZEN_MODE ? $t('action.turn_off') : $t('action.turn_on')
+          } ${$t('layout.zen_mode')}`"
+          :svg="ZEN_MODE ? 'minimize' : 'maximize'"
+          :class="{
+            '!text-accent !focus-visible:text-accentDark !hover:text-accentDark':
+              ZEN_MODE,
+          }"
+          @click.native="ZEN_MODE = !ZEN_MODE"
+        />
+      </div>
+      <div class="flex">
+        <span>
+          <tippy
+            ref="options"
+            interactive
+            trigger="click"
+            theme="popover"
+            arrow
           >
-            OSS Capital
-          </a>
-          <a
-            class="footer-link"
-            href="https://paw.cloud/?utm_source=hoppscotch&utm_medium=website&utm_campaign=hoppscotch-sponsorship"
-            target="_blank"
-            rel="noopener"
-          >
-            Paw
-          </a>
-          <a
-            class="footer-link"
-            href="https://simplescraper.io/?utm_source=hs"
-            target="_blank"
-            rel="noopener"
-          >
-            Simplescraper
-          </a>
-        </span>
-        <iframe
-          src="https://ghbtns.com/github-btn.html?user=hoppscotch&type=sponsor"
-          frameborder="0"
-          scrolling="0"
-          width="150"
-          height="20"
-          title="GitHub"
-          class="footer-link"
-          loading="lazy"
-        ></iframe>
-      </span>
-      <span class="flex font-mono" style="align-items: start">
-        <a href="mailto:support@hoppscotch.io" target="_blank" rel="noopener">
-          <button v-tooltip="$t('contact_us')" class="icon">
-            <i class="material-icons">email</i>
-          </button>
-        </a>
-        <v-popover>
-          <button v-tooltip="$t('choose_language')" class="icon">
-            <i class="material-icons">translate</i>
-          </button>
-          <template slot="popover">
-            <div v-for="locale in availableLocales" :key="locale.code">
-              <nuxt-link :to="switchLocalePath(locale.code)">
-                <button v-close-popover class="icon">
-                  {{ locale.name }}
-                </button>
-              </nuxt-link>
+            <template #trigger>
+              <ButtonSecondary
+                svg="help-circle"
+                class="!rounded-none"
+                :label="$t('app.help')"
+              />
+            </template>
+            <div class="flex flex-col">
+              <SmartItem
+                svg="book"
+                :label="$t('app.documentation')"
+                to="https://docs.hoppscotch.io"
+                blank
+                @click.native="$refs.options.tippy().hide()"
+              />
+              <SmartItem
+                svg="zap"
+                :label="$t('app.keyboard_shortcuts')"
+                @click.native="
+                  showShortcuts = true
+                  $refs.options.tippy().hide()
+                "
+              />
+              <SmartItem
+                svg="gift"
+                :label="$t('app.whats_new')"
+                to="https://docs.hoppscotch.io/changelog"
+                blank
+                @click.native="$refs.options.tippy().hide()"
+              />
+              <SmartItem
+                svg="message-circle"
+                :label="$t('app.chat_with_us')"
+                @click.native="
+                  chatWithUs()
+                  $refs.options.tippy().hide()
+                "
+              />
+              <hr />
+              <SmartItem
+                svg="twitter"
+                :label="$t('app.twitter')"
+                to="https://hoppscotch.io/twitter"
+                blank
+                @click.native="$refs.options.tippy().hide()"
+              />
+              <SmartItem
+                svg="user-plus"
+                :label="$t('app.invite')"
+                @click.native="
+                  showShare = true
+                  $refs.options.tippy().hide()
+                "
+              />
+              <SmartItem
+                svg="lock"
+                :label="$t('app.terms_and_privacy')"
+                to="https://docs.hoppscotch.io/privacy"
+                blank
+                @click.native="$refs.options.tippy().hide()"
+              />
+              <!-- <SmartItem :label="$t('app.status')" /> -->
+              <div class="flex opacity-50 py-2 px-4">
+                {{ `${$t("app.name")} ${$t("app.version")}` }}
+              </div>
             </div>
-          </template>
-        </v-popover>
-      </span>
+          </tippy>
+        </span>
+        <ButtonSecondary
+          v-tippy="{ theme: 'tooltip' }"
+          svg="zap"
+          :title="$t('app.shortcuts')"
+          @click.native="showShortcuts = true"
+        />
+        <ButtonSecondary
+          v-if="navigatorShare"
+          v-tippy="{ theme: 'tooltip' }"
+          svg="share-2"
+          :title="$t('request.share')"
+          @click.native="nativeShare()"
+        />
+        <ButtonSecondary
+          v-tippy="{ theme: 'tooltip' }"
+          :title="RIGHT_SIDEBAR ? $t('hide.sidebar') : $t('show.sidebar')"
+          svg="sidebar"
+          class="transform rotate-180"
+          :class="{ 'rotate-360': !RIGHT_SIDEBAR }"
+          @click.native="RIGHT_SIDEBAR = !RIGHT_SIDEBAR"
+        />
+      </div>
     </div>
-  </footer>
+    <AppShortcuts :show="showShortcuts" @close="showShortcuts = false" />
+    <AppShare :show="showShare" @hide-modal="showShare = false" />
+  </div>
 </template>
 
-<script>
-export default {
-  computed: {
-    availableLocales() {
-      return this.$i18n.locales.filter(({ code }) => code !== this.$i18n.locale)
+<script lang="ts">
+import { defineComponent, ref } from "@nuxtjs/composition-api"
+import { defineActionHandler } from "~/helpers/actions"
+import { showChat } from "~/helpers/support"
+import { useSetting } from "~/newstore/settings"
+
+export default defineComponent({
+  setup() {
+    const showShortcuts = ref(false)
+    const showShare = ref(false)
+
+    defineActionHandler("flyouts.keybinds.toggle", () => {
+      showShortcuts.value = !showShortcuts.value
+    })
+
+    defineActionHandler("modals.share.toggle", () => {
+      showShare.value = !showShare.value
+    })
+
+    return {
+      LEFT_SIDEBAR: useSetting("LEFT_SIDEBAR"),
+      RIGHT_SIDEBAR: useSetting("RIGHT_SIDEBAR"),
+      ZEN_MODE: useSetting("ZEN_MODE"),
+
+      navigatorShare: !!navigator.share,
+
+      showShortcuts,
+      showShare,
+    }
+  },
+  watch: {
+    ZEN_MODE() {
+      this.LEFT_SIDEBAR = !this.ZEN_MODE
     },
   },
-}
+  methods: {
+    nativeShare() {
+      if (navigator.share) {
+        navigator
+          .share({
+            title: "Hoppscotch",
+            text: "Hoppscotch • Open source API development ecosystem - Helps you create requests faster, saving precious time on development.",
+            url: "https://hoppscotch.io",
+          })
+          .then(() => {})
+          .catch(console.error)
+      } else {
+        // fallback
+      }
+    },
+    chatWithUs() {
+      showChat()
+    },
+  },
+})
 </script>
-
-<style scoped lang="scss">
-.footer-link {
-  @apply flex-shrink-0;
-  @apply my-2;
-  @apply mx-4;
-  @apply text-secondaryLight;
-  @apply text-sm;
-
-  &:hover {
-    @apply text-secondary;
-  }
-}
-</style>

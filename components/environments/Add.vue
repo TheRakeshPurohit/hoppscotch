@@ -1,46 +1,41 @@
 <template>
-  <SmartModal v-if="show" @close="hideModal">
-    <div slot="header">
-      <div class="row-wrapper">
-        <h3 class="title">{{ $t("new_environment") }}</h3>
-        <div>
-          <button class="icon" @click="hideModal">
-            <i class="material-icons">close</i>
-          </button>
-        </div>
+  <SmartModal v-if="show" :title="$t('environment.new')" @close="hideModal">
+    <template #body>
+      <div class="flex flex-col px-2">
+        <input
+          id="selectLabelEnvAdd"
+          v-model="name"
+          v-focus
+          class="input floating-input"
+          placeholder=" "
+          type="text"
+          @keyup.enter="addNewEnvironment"
+        />
+        <label for="selectLabelEnvAdd">
+          {{ $t("action.label") }}
+        </label>
       </div>
-    </div>
-    <div slot="body" class="flex flex-col">
-      <label for="selectLabel">{{ $t("label") }}</label>
-      <input
-        id="selectLabel"
-        v-model="name"
-        type="text"
-        :placeholder="$t('my_new_environment')"
-        @keyup.enter="addNewEnvironment"
-      />
-    </div>
-    <div slot="footer">
-      <div class="row-wrapper">
-        <span></span>
-        <span>
-          <button class="icon" @click="hideModal">
-            {{ $t("cancel") }}
-          </button>
-          <button class="icon primary" @click="addNewEnvironment">
-            {{ $t("save") }}
-          </button>
-        </span>
-      </div>
-    </div>
+    </template>
+    <template #footer>
+      <span>
+        <ButtonPrimary
+          :label="$t('action.save')"
+          @click.native="addNewEnvironment"
+        />
+        <ButtonSecondary
+          :label="$t('action.cancel')"
+          @click.native="hideModal"
+        />
+      </span>
+    </template>
   </SmartModal>
 </template>
 
 <script lang="ts">
-import Vue from "vue"
+import { defineComponent } from "@nuxtjs/composition-api"
 import { createEnvironment } from "~/newstore/environments"
 
-export default Vue.extend({
+export default defineComponent({
   props: {
     show: Boolean,
   },
@@ -52,7 +47,9 @@ export default Vue.extend({
   methods: {
     addNewEnvironment() {
       if (!this.name) {
-        this.$toast.info(this.$t("invalid_environment_name").toString())
+        this.$toast.error(this.$t("environment.invalid_name").toString(), {
+          icon: "error_outline",
+        })
         return
       }
       createEnvironment(this.name)

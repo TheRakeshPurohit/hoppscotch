@@ -1,279 +1,406 @@
 <template>
-  <div class="page">
-    <div v-if="currentUser && currentUser.eaInvited">
-      <Teams />
-    </div>
-
-    <AppSection ref="account" :label="$t('account')">
-      <div class="flex flex-col">
-        <label>{{ $t("account") }}</label>
-        <div v-if="fb.currentUser">
-          <button class="icon">
-            <img
-              v-if="fb.currentUser.photoURL"
-              :src="fb.currentUser.photoURL"
-              class="w-6 h-6 rounded-full material-icons"
+  <div>
+    <div class="divide-y divide-dividerLight space-y-8">
+      <div class="md:grid md:gap-4 md:grid-cols-3">
+        <div class="p-8 md:col-span-1">
+          <h3 class="heading">
+            {{ $t("settings.account") }}
+          </h3>
+          <p class="mt-1 text-secondaryLight">
+            {{ $t("settings.account_description") }}
+          </p>
+        </div>
+        <div class="p-8 md:col-span-2">
+          <div v-if="currentUser === null">
+            <ButtonPrimary
+              :label="$t('auth.login')"
+              @click.native="showLogin = true"
             />
-            <i v-else class="material-icons">account_circle</i>
-            <span>
-              {{ fb.currentUser.displayName || $t("nothing_found") }}
-            </span>
-          </button>
-          <br />
-          <button class="icon">
-            <i class="material-icons">email</i>
-            <span>
-              {{ fb.currentUser.email || $t("nothing_found") }}
-            </span>
-          </button>
-          <br />
-          <FirebaseLogout />
-          <p>
-            <SmartToggle
-              :on="SYNC_COLLECTIONS"
-              @change="toggleSettings('syncCollections', !SYNC_COLLECTIONS)"
-            >
-              {{ $t("syncCollections") + " " + $t("sync") }}
-              {{ SYNC_COLLECTIONS ? $t("enabled") : $t("disabled") }}
-            </SmartToggle>
-          </p>
-
-          <p>
-            <SmartToggle
-              :on="SYNC_ENVIRONMENTS"
-              @change="toggleSettings('syncEnvironments', !SYNC_ENVIRONMENTS)"
-            >
-              {{ $t("syncEnvironments") + " " + $t("sync") }}
-              {{ SYNC_ENVIRONMENTS ? $t("enabled") : $t("disabled") }}
-            </SmartToggle>
-          </p>
-
-          <p>
-            <SmartToggle
-              :on="SYNC_HISTORY"
-              @change="toggleSettings('syncHistory', !SYNC_HISTORY)"
-            >
-              {{ $t("syncHistory") + " " + $t("sync") }}
-              {{ SYNC_HISTORY ? $t("enabled") : $t("disabled") }}
-            </SmartToggle>
-          </p>
-
-          <p v-if="fb.currentSettings.length !== 3">
-            <button @click="initSettings">
-              <i class="material-icons">sync</i>
-              <span>{{ $t("turn_on") + " " + $t("sync") }}</span>
-            </button>
-          </p>
-        </div>
-        <div v-else>
-          <label>{{ $t("login_with") }}</label>
-          <p>
-            <FirebaseLogin @show-email="showEmail = true" />
-          </p>
-        </div>
-      </div>
-    </AppSection>
-
-    <AppSection ref="theme" :label="$t('theme')">
-      <div class="flex flex-col">
-        <label>{{ $t("theme") }}</label>
-        <SmartColorModePicker />
-        <SmartAccentModePicker />
-        <span>
-          <SmartToggle
-            :on="SCROLL_INTO_ENABLED"
-            @change="toggleSetting('SCROLL_INTO_ENABLED')"
-          >
-            {{ $t("scrollInto_use_toggle") }}
-            {{ SCROLL_INTO_ENABLED ? $t("enabled") : $t("disabled") }}
-          </SmartToggle>
-        </span>
-      </div>
-    </AppSection>
-
-    <AppSection ref="extensions" :label="$t('extensions')">
-      <div class="flex flex-col">
-        <label>{{ $t("extensions") }}</label>
-        <div class="row-wrapper">
-          <SmartToggle
-            :on="EXTENSIONS_ENABLED"
-            @change="toggleSetting('EXTENSIONS_ENABLED')"
-          >
-            {{ $t("extensions_use_toggle") }}
-          </SmartToggle>
-        </div>
-        <p v-if="extensionVersion != null" class="info">
-          {{ $t("extension_version") }}: v{{ extensionVersion.major }}.{{
-            extensionVersion.minor
-          }}
-        </p>
-        <p v-else class="info">
-          {{ $t("extension_version") }}: {{ $t("extension_ver_not_reported") }}
-        </p>
-      </div>
-    </AppSection>
-
-    <AppSection ref="proxy" :label="$t('proxy')">
-      <div class="flex flex-col">
-        <label>{{ $t("proxy") }}</label>
-        <div class="row-wrapper">
-          <span>
-            <SmartToggle
-              :on="PROXY_ENABLED"
-              @change="toggleSetting('PROXY_ENABLED')"
-            >
-              {{ $t("proxy") }}
-              {{ PROXY_ENABLED ? $t("enabled") : $t("disabled") }}
-            </SmartToggle>
-          </span>
-          <a
-            href="https://github.com/hoppscotch/hoppscotch/wiki/Proxy"
-            target="_blank"
-            rel="noopener"
-          >
-            <button v-tooltip="$t('wiki')" class="icon">
-              <i class="material-icons">help_outline</i>
-            </button>
-          </a>
-        </div>
-        <div class="row-wrapper">
-          <label for="url">{{ $t("url") }}</label>
-          <button
-            v-tooltip.bottom="$t('reset_default')"
-            class="icon"
-            @click="resetProxy"
-          >
-            <i class="material-icons">clear_all</i>
-          </button>
-        </div>
-        <input
-          id="url"
-          v-model="PROXY_URL"
-          type="url"
-          :disabled="!PROXY_ENABLED"
-          :placeholder="$t('url')"
-        />
-        <p class="info">
-          {{ $t("official_proxy_hosting") }}
-          <br />
-          {{ $t("read_the") }}
-          <a
-            class="link"
-            href="https://github.com/hoppscotch/proxyscotch/wiki/Privacy-policy"
-            target="_blank"
-            rel="noopener"
-          >
-            {{ $t("proxy_privacy_policy") }} </a
-          >.
-        </p>
-      </div>
-      <!--
-      PROXY SETTINGS URL AND KEY
-      --------------
-		  This feature is currently not finished.
-			<ul>
-				<li>
-					<label for="url">URL</label>
-					<input id="url" type="url" v-model="settings.PROXY_URL" :disabled="!settings.PROXY_ENABLED">
-				</li>
-				<li>
-					<label for="key">Key</label>
-					<input id="key" type="password" v-model="settings.PROXY_KEY" :disabled="!settings.PROXY_ENABLED" @change="applySetting('PROXY_KEY', $event)">
-				</li>
-			</ul>
-      -->
-    </AppSection>
-
-    <AppSection ref="experiments" :label="$t('experiments')">
-      <div class="flex flex-col">
-        <label>{{ $t("experiments") }}</label>
-        <p class="info">
-          {{ $t("experiments_notice") }}
-          <a
-            class="link"
-            href="https://github.com/hoppscotch/hoppscotch/issues/new/choose"
-            target="_blank"
-            rel="noopener noreferrer"
-            >{{ $t("contact_us") }}</a
-          >.
-        </p>
-        <div class="row-wrapper">
-          <SmartToggle
-            :on="EXPERIMENTAL_URL_BAR_ENABLED"
-            @change="toggleSetting('EXPERIMENTAL_URL_BAR_ENABLED')"
-          >
-            {{ $t("use_experimental_url_bar") }}
-          </SmartToggle>
+          </div>
+          <div v-else class="space-y-8">
+            <section>
+              <h4 class="font-semibold text-secondaryDark">
+                {{ $t("settings.user") }}
+              </h4>
+              <div class="space-y-4 py-4">
+                <div class="flex items-start">
+                  <div class="flex items-center">
+                    <img
+                      v-if="currentUser.photoURL"
+                      :src="currentUser.photoURL"
+                      class="rounded-full h-5 w-5"
+                    />
+                    <SmartIcon v-else name="user" class="svg-icons" />
+                  </div>
+                  <div class="ml-4">
+                    <label>
+                      {{ currentUser.displayName || $t("state.nothing_found") }}
+                    </label>
+                    <p class="mt-1 text-secondaryLight">
+                      {{ $t("settings.account_name_description") }}
+                    </p>
+                  </div>
+                </div>
+                <div class="flex items-start">
+                  <div class="flex items-center">
+                    <SmartIcon name="at-sign" class="svg-icons" />
+                  </div>
+                  <div class="ml-4">
+                    <label>
+                      {{ currentUser.email || $t("state.nothing_found") }}
+                    </label>
+                    <p class="mt-1 text-secondaryLight">
+                      {{ $t("settings.account_email_description") }}
+                    </p>
+                  </div>
+                </div>
+              </div>
+            </section>
+            <Teams v-if="currentBackendUser && currentBackendUser.eaInvited" />
+            <section>
+              <h4 class="font-semibold text-secondaryDark">
+                {{ $t("settings.sync") }}
+              </h4>
+              <div class="mt-1 text-secondaryLight">
+                {{ $t("settings.sync_description") }}
+              </div>
+              <div class="space-y-4 py-4">
+                <div class="flex items-center">
+                  <SmartToggle
+                    :on="SYNC_COLLECTIONS"
+                    @change="
+                      toggleSettings('syncCollections', !SYNC_COLLECTIONS)
+                    "
+                  >
+                    {{ $t("settings.sync_collections") }}
+                  </SmartToggle>
+                </div>
+                <div class="flex items-center">
+                  <SmartToggle
+                    :on="SYNC_ENVIRONMENTS"
+                    @change="
+                      toggleSettings('syncEnvironments', !SYNC_ENVIRONMENTS)
+                    "
+                  >
+                    {{ $t("settings.sync_environments") }}
+                  </SmartToggle>
+                </div>
+                <div class="flex items-center">
+                  <SmartToggle
+                    :on="SYNC_HISTORY"
+                    @change="toggleSettings('syncHistory', !SYNC_HISTORY)"
+                  >
+                    {{ $t("settings.sync_history") }}
+                  </SmartToggle>
+                </div>
+              </div>
+            </section>
+          </div>
         </div>
       </div>
-    </AppSection>
-    <FirebaseEmail :show="showEmail" @hide-modal="showEmail = false" />
+
+      <div class="md:grid md:gap-4 md:grid-cols-3">
+        <div class="p-8 md:col-span-1">
+          <h3 class="heading">
+            {{ $t("settings.theme") }}
+          </h3>
+          <p class="mt-1 text-secondaryLight">
+            {{ $t("settings.theme_description") }}
+          </p>
+        </div>
+        <div class="space-y-8 p-8 md:col-span-2">
+          <section>
+            <h4 class="font-semibold text-secondaryDark">
+              {{ $t("settings.background") }}
+            </h4>
+            <div class="mt-1 text-secondaryLight">
+              <ColorScheme placeholder="..." tag="span">
+                {{ $t(getColorModeName($colorMode.preference)) }}
+                <span v-if="$colorMode.preference === 'system'">
+                  ({{ $t(getColorModeName($colorMode.value)) }})
+                </span>
+              </ColorScheme>
+            </div>
+            <div class="mt-4">
+              <SmartColorModePicker />
+            </div>
+          </section>
+          <section>
+            <h4 class="font-semibold text-secondaryDark">
+              {{ $t("settings.accent_color") }}
+            </h4>
+            <div class="mt-1 text-secondaryLight">
+              {{ active.charAt(0).toUpperCase() + active.slice(1) }}
+            </div>
+            <div class="mt-4">
+              <SmartAccentModePicker />
+            </div>
+          </section>
+          <section>
+            <h4 class="font-semibold text-secondaryDark">
+              {{ $t("settings.font_size") }}
+            </h4>
+            <div class="mt-4">
+              <SmartFontSizePicker />
+            </div>
+          </section>
+          <section>
+            <h4 class="font-semibold text-secondaryDark">
+              {{ $t("settings.language") }}
+            </h4>
+            <div class="mt-4">
+              <SmartChangeLanguage />
+            </div>
+          </section>
+          <section>
+            <h4 class="font-semibold text-secondaryDark">
+              {{ $t("settings.experiments") }}
+            </h4>
+            <div class="mt-1 text-secondaryLight">
+              {{ $t("settings.experiments_notice") }}
+              <SmartLink
+                class="link"
+                to="https://github.com/hoppscotch/hoppscotch/issues/new/choose"
+                blank
+              >
+                {{ $t("app.contact_us") }} </SmartLink
+              >.
+            </div>
+            <div class="space-y-4 py-4">
+              <div class="flex items-center">
+                <SmartToggle
+                  :on="EXPERIMENTAL_URL_BAR_ENABLED"
+                  @change="toggleSetting('EXPERIMENTAL_URL_BAR_ENABLED')"
+                >
+                  {{ $t("settings.use_experimental_url_bar") }}
+                </SmartToggle>
+              </div>
+              <div class="flex items-center">
+                <SmartToggle :on="TELEMETRY_ENABLED" @change="showConfirmModal">
+                  {{ $t("settings.telemetry") }}
+                  {{
+                    TELEMETRY_ENABLED
+                      ? $t("state.enabled")
+                      : $t("state.disabled")
+                  }}
+                </SmartToggle>
+              </div>
+              <!-- <div class="flex items-center">
+                <SmartToggle
+                  :on="LEFT_SIDEBAR"
+                  @change="toggleSetting('LEFT_SIDEBAR')"
+                >
+                  {{ $t("settings.navigation_sidebar") }}
+                  {{
+                    LEFT_SIDEBAR ? $t("state.enabled") : $t("state.disabled")
+                  }}
+                </SmartToggle>
+              </div> -->
+              <div class="flex items-center">
+                <SmartToggle :on="ZEN_MODE" @change="toggleSetting('ZEN_MODE')">
+                  {{ $t("layout.zen_mode") }}
+                  {{ ZEN_MODE ? $t("state.enabled") : $t("state.disabled") }}
+                </SmartToggle>
+              </div>
+            </div>
+          </section>
+        </div>
+      </div>
+
+      <div class="md:grid md:gap-4 md:grid-cols-3">
+        <div class="p-8 md:col-span-1">
+          <h3 class="heading">
+            {{ $t("settings.interceptor") }}
+          </h3>
+          <p class="mt-1 text-secondaryLight">
+            {{ $t("settings.interceptor_description") }}
+          </p>
+        </div>
+        <div class="space-y-8 p-8 md:col-span-2">
+          <section>
+            <h4 class="font-semibold text-secondaryDark">
+              {{ $t("settings.extensions") }}
+            </h4>
+            <div class="mt-1 text-secondaryLight">
+              <span v-if="extensionVersion != null">
+                {{
+                  `${$t("settings.extension_version")}: v${
+                    extensionVersion.major
+                  }.${extensionVersion.minor}`
+                }}
+              </span>
+              <span v-else>
+                {{ $t("settings.extension_version") }}:
+                {{ $t("settings.extension_ver_not_reported") }}
+              </span>
+            </div>
+            <div class="flex flex-col space-y-2 py-4">
+              <span>
+                <SmartItem
+                  to="https://addons.mozilla.org/en-US/firefox/addon/hoppscotch"
+                  blank
+                  svg="firefox"
+                  label="Firefox"
+                  :info-icon="hasFirefoxExtInstalled ? 'check_circle' : ''"
+                  :active-info-icon="hasFirefoxExtInstalled"
+                  outline
+                />
+              </span>
+              <span>
+                <SmartItem
+                  to="https://chrome.google.com/webstore/detail/hoppscotch-browser-extens/amknoiejhlmhancpahfcfcfhllgkpbld"
+                  blank
+                  svg="chrome"
+                  label="Chrome"
+                  :info-icon="hasChromeExtInstalled ? 'check_circle' : ''"
+                  :active-info-icon="hasChromeExtInstalled"
+                  outline
+                />
+              </span>
+            </div>
+            <div class="space-y-4 py-4">
+              <div class="flex items-center">
+                <SmartToggle
+                  :on="EXTENSIONS_ENABLED"
+                  @change="toggleSetting('EXTENSIONS_ENABLED')"
+                >
+                  {{ $t("settings.extensions_use_toggle") }}
+                </SmartToggle>
+              </div>
+            </div>
+          </section>
+          <section>
+            <h4 class="font-semibold text-secondaryDark">
+              {{ $t("settings.proxy") }}
+            </h4>
+            <div class="mt-1 text-secondaryLight">
+              {{
+                `${$t("settings.official_proxy_hosting")} ${$t(
+                  "settings.read_the"
+                )}`
+              }}
+              <SmartLink
+                class="link"
+                to="https://docs.hoppscotch.io/privacy"
+                blank
+              >
+                {{ $t("app.proxy_privacy_policy") }} </SmartLink
+              >.
+            </div>
+            <div class="space-y-4 py-4">
+              <div class="flex items-center">
+                <SmartToggle
+                  :on="PROXY_ENABLED"
+                  @change="toggleSetting('PROXY_ENABLED')"
+                >
+                  {{ $t("settings.proxy_use_toggle") }}
+                </SmartToggle>
+              </div>
+            </div>
+            <div class="flex space-x-2 py-4 items-center">
+              <div class="flex flex-1 items-center relative">
+                <input
+                  id="url"
+                  v-model="PROXY_URL"
+                  class="input floating-input"
+                  placeholder=" "
+                  type="url"
+                  :disabled="!PROXY_ENABLED"
+                />
+                <label for="url">
+                  {{ $t("settings.proxy_url") }}
+                </label>
+              </div>
+              <ButtonSecondary
+                v-tippy="{ theme: 'tooltip' }"
+                :title="$t('settings.reset_default')"
+                :svg="clearIcon"
+                outline
+                class="rounded"
+                @click.native="resetProxy"
+              />
+            </div>
+          </section>
+        </div>
+      </div>
+    </div>
+    <FirebaseLogin :show="showLogin" @hide-modal="showLogin = false" />
+    <SmartConfirmModal
+      :show="confirmRemove"
+      :title="`${$t('confirm.remove_telemetry')} ${$t(
+        'settings.telemetry_helps_us'
+      )}`"
+      @hide-modal="confirmRemove = false"
+      @resolve="
+        toggleSetting('TELEMETRY_ENABLED')
+        confirmRemove = false
+      "
+    />
   </div>
 </template>
 
 <script lang="ts">
-import Vue from "vue"
-import { hasExtensionInstalled } from "../helpers/strategies/ExtensionStrategy"
-import { fb } from "~/helpers/fb"
+import { defineComponent } from "@nuxtjs/composition-api"
+import { currentUserInfo$ } from "~/helpers/teams/BackendUserInfo"
 import {
-  getSettingSubject,
+  hasExtensionInstalled,
+  hasChromeExtensionInstalled,
+  hasFirefoxExtensionInstalled,
+} from "~/helpers/strategies/ExtensionStrategy"
+import {
   applySetting,
   toggleSetting,
   defaultSettings,
+  useSetting,
 } from "~/newstore/settings"
 import type { KeysMatching } from "~/types/ts-utils"
-import { currentUserInfo$ } from "~/helpers/teams/BackendUserInfo"
+import { currentUser$ } from "~/helpers/fb/auth"
+import { getLocalConfig } from "~/newstore/localpersistence"
+import { useReadonlyStream } from "~/helpers/utils/composables"
 
 type SettingsType = typeof defaultSettings
 
-export default Vue.extend({
+export default defineComponent({
+  setup() {
+    return {
+      PROXY_ENABLED: useSetting("PROXY_ENABLED"),
+      PROXY_URL: useSetting("PROXY_URL"),
+      PROXY_KEY: useSetting("PROXY_KEY"),
+      EXTENSIONS_ENABLED: useSetting("EXTENSIONS_ENABLED"),
+      EXPERIMENTAL_URL_BAR_ENABLED: useSetting("EXPERIMENTAL_URL_BAR_ENABLED"),
+      SYNC_COLLECTIONS: useSetting("syncCollections"),
+      SYNC_ENVIRONMENTS: useSetting("syncEnvironments"),
+      SYNC_HISTORY: useSetting("syncHistory"),
+      TELEMETRY_ENABLED: useSetting("TELEMETRY_ENABLED"),
+      LEFT_SIDEBAR: useSetting("LEFT_SIDEBAR"),
+      ZEN_MODE: useSetting("ZEN_MODE"),
+      currentUser: useReadonlyStream(currentUser$, currentUser$.value),
+      currentBackendUser: useReadonlyStream(
+        currentUserInfo$,
+        currentUserInfo$.value
+      ),
+    }
+  },
   data() {
     return {
       extensionVersion: hasExtensionInstalled()
         ? window.__POSTWOMAN_EXTENSION_HOOK__.getVersion()
         : null,
 
-      doneButton: '<i class="material-icons">done</i>',
-      fb,
+      hasChromeExtInstalled: hasChromeExtensionInstalled(),
+      hasFirefoxExtInstalled: hasFirefoxExtensionInstalled(),
 
-      SYNC_COLLECTIONS: true,
-      SYNC_ENVIRONMENTS: true,
-      SYNC_HISTORY: true,
+      clearIcon: "rotate-ccw",
 
-      PROXY_URL: "",
-      PROXY_KEY: "",
+      showLogin: false,
 
-      EXTENSIONS_ENABLED: true,
-      PROXY_ENABLED: true,
-
-      showEmail: false,
-    }
-  },
-  subscriptions() {
-    return {
-      SCROLL_INTO_ENABLED: getSettingSubject("SCROLL_INTO_ENABLED"),
-
-      PROXY_ENABLED: getSettingSubject("PROXY_ENABLED"),
-      PROXY_URL: getSettingSubject("PROXY_URL"),
-      PROXY_KEY: getSettingSubject("PROXY_KEY"),
-
-      EXTENSIONS_ENABLED: getSettingSubject("EXTENSIONS_ENABLED"),
-
-      EXPERIMENTAL_URL_BAR_ENABLED: getSettingSubject(
-        "EXPERIMENTAL_URL_BAR_ENABLED"
-      ),
-
-      SYNC_COLLECTIONS: getSettingSubject("syncCollections"),
-      SYNC_ENVIRONMENTS: getSettingSubject("syncEnvironments"),
-      SYNC_HISTORY: getSettingSubject("syncHistory"),
-
-      // Teams feature flag
-      currentUser: currentUserInfo$,
+      active: getLocalConfig("THEME_COLOR") || "blue",
+      confirmRemove: false,
     }
   },
   head() {
     return {
-      title: `Settings • Hoppscotch`,
+      title: `${this.$t("navigation.settings")} • Hoppscotch`,
     }
   },
   computed: {
@@ -285,6 +412,10 @@ export default Vue.extend({
     },
   },
   watch: {
+    ZEN_MODE(ZEN_MODE) {
+      this.applySetting("LEFT_SIDEBAR", !ZEN_MODE)
+      // this.applySetting("RIGHT_SIDEBAR", !ZEN_MODE)
+    },
     proxySettings: {
       deep: true,
       handler({ url, key }) {
@@ -294,6 +425,10 @@ export default Vue.extend({
     },
   },
   methods: {
+    showConfirmModal() {
+      if (this.TELEMETRY_ENABLED) this.confirmRemove = true
+      else toggleSetting("TELEMETRY_ENABLED")
+    },
     applySetting<K extends keyof SettingsType>(key: K, value: SettingsType[K]) {
       applySetting(key, value)
     },
@@ -311,53 +446,27 @@ export default Vue.extend({
       value: SettingsType[K]
     ) {
       this.applySetting(name, value)
-
-      if (name === "syncCollections" && value) {
-        this.syncCollections()
-      }
-      if (name === "syncEnvironments" && value) {
-        this.syncEnvironments()
-      }
     },
-    initSettings() {
-      applySetting("syncHistory", true)
-      applySetting("syncCollections", true)
-      applySetting("syncEnvironments", true)
-    },
-    resetProxy({ target }: { target: HTMLElement }) {
+    resetProxy() {
       applySetting("PROXY_URL", `https://proxy.hoppscotch.io/`)
-
-      target.innerHTML = this.doneButton
-      this.$toast.info(this.$t("cleared"), {
+      this.clearIcon = "check"
+      this.$toast.success(this.$t("state.cleared").toString(), {
         icon: "clear_all",
       })
-      setTimeout(
-        () => (target.innerHTML = '<i class="material-icons">clear_all</i>'),
-        1000
-      )
+      setTimeout(() => (this.clearIcon = "rotate-ccw"), 1000)
     },
-    // TODO: Use the new collection store
-    syncCollections(): void {
-      if (fb.currentUser !== null && this.SYNC_COLLECTIONS) {
-        if (this.$store.state.postwoman.collections)
-          fb.writeCollections(
-            JSON.parse(JSON.stringify(this.$store.state.postwoman.collections)),
-            "collections"
-          )
-        if (this.$store.state.postwoman.collectionsGraphql)
-          fb.writeCollections(
-            JSON.parse(
-              JSON.stringify(this.$store.state.postwoman.collectionsGraphql)
-            ),
-            "collectionsGraphql"
-          )
-      }
-    },
-    syncEnvironments(): void {
-      if (fb.currentUser !== null && this.SYNC_ENVIRONMENTS) {
-        fb.writeEnvironments(
-          JSON.parse(JSON.stringify(this.$store.state.postwoman.environments))
-        )
+    getColorModeName(colorMode: string) {
+      switch (colorMode) {
+        case "system":
+          return "settings.system_mode"
+        case "light":
+          return "settings.light_mode"
+        case "dark":
+          return "settings.dark_mode"
+        case "black":
+          return "settings.black_mode"
+        default:
+          return "settings.system_mode"
       }
     },
   },

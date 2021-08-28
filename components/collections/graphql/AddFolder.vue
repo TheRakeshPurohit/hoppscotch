@@ -1,45 +1,41 @@
 <template>
-  <SmartModal v-if="show" @close="$emit('hide-modal')">
-    <div slot="header">
-      <div class="row-wrapper">
-        <h3 class="title">{{ $t("new_folder") }}</h3>
-        <div>
-          <button class="icon" @click="hideModal">
-            <i class="material-icons">close</i>
-          </button>
-        </div>
+  <SmartModal
+    v-if="show"
+    :title="$t('folder.new')"
+    @close="$emit('hide-modal')"
+  >
+    <template #body>
+      <div class="flex flex-col px-2">
+        <input
+          id="selectLabelGqlAddFolder"
+          v-model="name"
+          v-focus
+          class="input floating-input"
+          placeholder=" "
+          type="text"
+          @keyup.enter="addFolder"
+        />
+        <label for="selectLabelGqlAddFolder">
+          {{ $t("action.label") }}
+        </label>
       </div>
-    </div>
-    <div slot="body" class="flex flex-col">
-      <label for="selectLabel">{{ $t("label") }}</label>
-      <input
-        id="selectLabel"
-        v-model="name"
-        type="text"
-        :placeholder="$t('my_new_folder')"
-        @keyup.enter="addFolder"
-      />
-    </div>
-    <div slot="footer">
-      <div class="row-wrapper">
-        <span></span>
-        <span>
-          <button class="icon" @click="hideModal">
-            {{ $t("cancel") }}
-          </button>
-          <button class="icon primary" @click="addFolder">
-            {{ $t("save") }}
-          </button>
-        </span>
-      </div>
-    </div>
+    </template>
+    <template #footer>
+      <span>
+        <ButtonPrimary :label="$t('action.save')" @click.native="addFolder" />
+        <ButtonSecondary
+          :label="$t('action.cancel')"
+          @click.native="hideModal"
+        />
+      </span>
+    </template>
   </SmartModal>
 </template>
 
 <script lang="ts">
-import Vue from "vue"
+import { defineComponent } from "@nuxtjs/composition-api"
 
-export default Vue.extend({
+export default defineComponent({
   props: {
     show: Boolean,
     folderPath: { type: String, default: null },

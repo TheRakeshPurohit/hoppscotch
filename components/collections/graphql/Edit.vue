@@ -1,46 +1,41 @@
 <template>
-  <SmartModal v-if="show" @close="hideModal">
-    <div slot="header">
-      <div class="row-wrapper">
-        <h3 class="title">{{ $t("edit_collection") }}</h3>
-        <div>
-          <button class="icon" @click="hideModal">
-            <i class="material-icons">close</i>
-          </button>
-        </div>
+  <SmartModal v-if="show" :title="$t('collection.edit')" @close="hideModal">
+    <template #body>
+      <div class="flex flex-col px-2">
+        <input
+          id="selectLabelGqlEdit"
+          v-model="name"
+          v-focus
+          class="input floating-input"
+          placeholder=" "
+          type="text"
+          @keyup.enter="saveCollection"
+        />
+        <label for="selectLabelGqlEdit">
+          {{ $t("action.label") }}
+        </label>
       </div>
-    </div>
-    <div slot="body" class="flex flex-col">
-      <label for="selectLabel">{{ $t("label") }}</label>
-      <input
-        id="selectLabel"
-        v-model="name"
-        type="text"
-        :placeholder="editingCollection.name"
-        @keyup.enter="saveCollection"
-      />
-    </div>
-    <div slot="footer">
-      <div class="row-wrapper">
-        <span></span>
-        <span>
-          <button class="icon" @click="hideModal">
-            {{ $t("cancel") }}
-          </button>
-          <button class="icon primary" @click="saveCollection">
-            {{ $t("save") }}
-          </button>
-        </span>
-      </div>
-    </div>
+    </template>
+    <template #footer>
+      <span>
+        <ButtonPrimary
+          :label="$t('action.save')"
+          @click.native="saveCollection"
+        />
+        <ButtonSecondary
+          :label="$t('action.cancel')"
+          @click.native="hideModal"
+        />
+      </span>
+    </template>
   </SmartModal>
 </template>
 
 <script lang="ts">
-import Vue from "vue"
+import { defineComponent } from "@nuxtjs/composition-api"
 import { editGraphqlCollection } from "~/newstore/collections"
 
-export default Vue.extend({
+export default defineComponent({
   props: {
     show: Boolean,
     editingCollection: { type: Object, default: () => {} },
@@ -54,11 +49,13 @@ export default Vue.extend({
   methods: {
     saveCollection() {
       if (!this.name) {
-        this.$toast.info(this.$t("invalid_collection_name").toString())
+        this.$toast.error(this.$t("collection.invalid_name").toString(), {
+          icon: "error_outline",
+        })
         return
       }
       const collectionUpdated = {
-        ...this.$props.editingCollection,
+        ...(this.editingCollection as any),
         name: this.name,
       }
 

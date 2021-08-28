@@ -1,43 +1,40 @@
 <template>
-  <SmartModal v-if="show" @close="hideModal">
-    <div slot="header">
-      <div class="row-wrapper">
-        <h3 class="title">{{ $t("edit_collection") }}</h3>
-        <div>
-          <button class="icon" @click="hideModal">
-            <i class="material-icons">close</i>
-          </button>
-        </div>
+  <SmartModal v-if="show" :title="$t('collection.edit')" @close="hideModal">
+    <template #body>
+      <div class="flex flex-col px-2">
+        <input
+          id="selectLabelEdit"
+          v-model="name"
+          v-focus
+          class="input floating-input"
+          placeholder=" "
+          type="text"
+          @keyup.enter="saveCollection"
+        />
+        <label for="selectLabelEdit">
+          {{ $t("action.label") }}
+        </label>
       </div>
-    </div>
-    <div slot="body" class="flex flex-col">
-      <label for="selectLabel">{{ $t("label") }}</label>
-      <input
-        id="selectLabel"
-        v-model="name"
-        type="text"
-        :placeholder="placeholderCollName"
-        @keyup.enter="saveCollection"
-      />
-    </div>
-    <div slot="footer">
-      <div class="row-wrapper">
-        <span></span>
-        <span>
-          <button class="icon" @click="hideModal">
-            {{ $t("cancel") }}
-          </button>
-          <button class="icon primary" @click="saveCollection">
-            {{ $t("save") }}
-          </button>
-        </span>
-      </div>
-    </div>
+    </template>
+    <template #footer>
+      <span>
+        <ButtonPrimary
+          :label="$t('action.save')"
+          @click.native="saveCollection"
+        />
+        <ButtonSecondary
+          :label="$t('action.cancel')"
+          @click.native="hideModal"
+        />
+      </span>
+    </template>
   </SmartModal>
 </template>
 
 <script>
-export default {
+import { defineComponent } from "@nuxtjs/composition-api"
+
+export default defineComponent({
   props: {
     show: Boolean,
     placeholderCollName: { type: String, default: null },
@@ -49,6 +46,12 @@ export default {
   },
   methods: {
     saveCollection() {
+      if (!this.name) {
+        this.$toast.error(this.$t("collection.invalid_name"), {
+          icon: "error_outline",
+        })
+        return
+      }
       this.$emit("submit", this.name)
       this.hideModal()
     },
@@ -57,5 +60,5 @@ export default {
       this.$emit("hide-modal")
     },
   },
-}
+})
 </script>

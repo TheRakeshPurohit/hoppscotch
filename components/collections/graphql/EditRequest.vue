@@ -1,50 +1,43 @@
 <template>
-  <SmartModal v-if="show" @close="hideModal">
-    <div slot="header">
-      <div class="row-wrapper">
-        <h3 class="title">{{ $t("edit_request") }}</h3>
-        <div>
-          <button class="icon" @click="hideModal">
-            <i class="material-icons">close</i>
-          </button>
-        </div>
+  <SmartModal v-if="show" :title="$t('modal.edit_request')" @close="hideModal">
+    <template #body>
+      <div class="flex flex-col px-2">
+        <input
+          id="selectLabelGqlEditReq"
+          v-model="requestUpdateData.name"
+          v-focus
+          class="input floating-input"
+          placeholder=" "
+          type="text"
+          @keyup.enter="saveRequest"
+        />
+        <label for="selectLabelGqlEditReq">
+          {{ $t("action.label") }}
+        </label>
       </div>
-    </div>
-    <div slot="body" class="flex flex-col">
-      <label for="selectLabel">{{ $t("label") }}</label>
-      <input
-        id="selectLabel"
-        v-model="requestUpdateData.name"
-        type="text"
-        :placeholder="request.name"
-        @keyup.enter="saveRequest"
-      />
-    </div>
-    <div slot="footer">
-      <div class="row-wrapper">
-        <span></span>
-        <span>
-          <button class="icon" @click="hideModal">
-            {{ $t("cancel") }}
-          </button>
-          <button class="icon primary" @click="saveRequest">
-            {{ $t("save") }}
-          </button>
-        </span>
-      </div>
-    </div>
+    </template>
+    <template #footer>
+      <span>
+        <ButtonPrimary :label="$t('action.save')" @click.native="saveRequest" />
+        <ButtonSecondary
+          :label="$t('action.cancel')"
+          @click.native="hideModal"
+        />
+      </span>
+    </template>
   </SmartModal>
 </template>
 
 <script lang="ts">
-import Vue from "vue"
+import { defineComponent, PropType } from "@nuxtjs/composition-api"
+import { HoppGQLRequest } from "~/helpers/types/HoppGQLRequest"
 import { editGraphqlRequest } from "~/newstore/collections"
 
-export default Vue.extend({
+export default defineComponent({
   props: {
     show: Boolean,
     folderPath: { type: String, default: null },
-    request: { type: Object, default: () => {} },
+    request: { type: Object as PropType<HoppGQLRequest>, default: () => {} },
     requestIndex: { type: Number, default: null },
   },
   data() {
@@ -56,6 +49,12 @@ export default Vue.extend({
   },
   methods: {
     saveRequest() {
+      if (!this.requestUpdateData.name) {
+        this.$toast.error(this.$t("collection.invalid_name").toString(), {
+          icon: "error_outline",
+        })
+        return
+      }
       const requestUpdated = {
         ...this.$props.request,
         name: this.$data.requestUpdateData.name || this.$props.request.name,

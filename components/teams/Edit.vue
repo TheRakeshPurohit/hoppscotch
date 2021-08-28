@@ -1,226 +1,208 @@
 <template>
-  <SmartModal v-if="show" @close="hideModal">
-    <div slot="header">
-      <ul>
-        <li>
-          <div class="row-wrapper">
-            <h3 class="title">{{ $t("edit_team") }}</h3>
-            <div>
-              <button class="icon" @click="hideModal">
-                <i class="material-icons">close</i>
-              </button>
-            </div>
-          </div>
-        </li>
-      </ul>
-    </div>
-    <div slot="body">
-      <ul>
-        <li>
+  <SmartModal v-if="show" :title="$t('team.edit')" @close="hideModal">
+    <template #body>
+      <div class="flex flex-col px-2">
+        <div class="flex relative">
           <input
+            id="selectLabelTeamEdit"
             v-model="name"
+            v-focus
+            class="input floating-input"
+            placeholder=" "
             type="text"
-            :placeholder="editingTeam.name"
             @keyup.enter="saveTeam"
           />
-        </li>
-      </ul>
-      <ul>
-        <li>
-          <div class="row-wrapper">
-            <label for="memberList">{{ $t("team_member_list") }}</label>
-            <div></div>
+          <label for="selectLabelTeamEdit">
+            {{ $t("action.label") }}
+          </label>
+        </div>
+        <div class="flex flex-1 justify-between items-center">
+          <label for="memberList" class="p-4">
+            {{ $t("team.members") }}
+          </label>
+          <div class="flex">
+            <ButtonSecondary
+              svg="plus"
+              :label="$t('add.new')"
+              @click.native="addTeamMember"
+            />
           </div>
-        </li>
-      </ul>
-      <ul
-        v-for="(member, index) in members"
-        :key="`new-${index}`"
-        class="
-          border-b border-dashed
-          divide-y
-          md:divide-x
-          border-divider
-          divide-dashed divide-divider
-          md:divide-y-0
-        "
-        :class="{ 'border-t': index == 0 }"
-      >
-        <li>
-          <input
-            :placeholder="$t('email')"
-            :name="'param' + index"
-            :value="member.user.email"
-            readonly
-          />
-        </li>
-        <li>
-          <span class="select-wrapper">
-            <v-popover>
-              <input
-                :placeholder="$t('permissions')"
-                :name="'value' + index"
-                :value="
-                  typeof member.role === 'string'
-                    ? member.role
-                    : JSON.stringify(member.role)
-                "
-                readonly
-              />
-              <template slot="popover">
-                <div>
-                  <button
-                    v-close-popover
-                    class="icon"
-                    @click="updateRole(index, 'OWNER')"
-                  >
-                    OWNER
-                  </button>
-                </div>
-                <div>
-                  <button
-                    v-close-popover
-                    class="icon"
-                    @click="updateRole(index, 'EDITOR')"
-                  >
-                    EDITOR
-                  </button>
-                </div>
-                <div>
-                  <button
-                    v-close-popover
-                    class="icon"
-                    @click="updateRole(index, 'VIEWER')"
-                  >
-                    VIEWER
-                  </button>
-                </div>
-              </template>
-            </v-popover>
-          </span>
-        </li>
-        <div>
-          <li>
-            <button
-              id="member"
-              v-tooltip.bottom="$t('delete')"
-              class="icon"
-              @click="removeExistingTeamMember(member.user.uid)"
-            >
-              <i class="material-icons">delete</i>
-            </button>
-          </li>
         </div>
-      </ul>
-      <ul
-        v-for="(member, index) in newMembers"
-        :key="index"
-        class="
-          border-b border-dashed
-          divide-y
-          md:divide-x
-          border-divider
-          divide-dashed divide-divider
-          md:divide-y-0
-        "
-      >
-        <li>
-          <input
-            v-model="member.key"
-            :placeholder="$t('email')"
-            :name="'param' + index"
-            autofocus
-          />
-        </li>
-        <li>
-          <span class="select-wrapper">
-            <v-popover>
-              <input
-                :placeholder="$t('permissions')"
-                :name="'value' + index"
-                :value="
-                  typeof member.value === 'string'
-                    ? member.value
-                    : JSON.stringify(member.value)
-                "
-                readonly
+        <div class="divide-y divide-dividerLight border-divider border rounded">
+          <div
+            v-for="(member, index) in members"
+            :key="`member-${index}`"
+            class="divide-x divide-dividerLight flex"
+          >
+            <input
+              class="bg-transparent flex flex-1 py-2 px-4"
+              :placeholder="$t('team.email')"
+              :name="'param' + index"
+              :value="member.user.email"
+              readonly
+            />
+            <span>
+              <tippy
+                :ref="`memberOptions-${index}`"
+                interactive
+                trigger="click"
+                theme="popover"
+                arrow
+              >
+                <template #trigger>
+                  <span class="select-wrapper">
+                    <input
+                      class="
+                        bg-transparent
+                        cursor-pointer
+                        flex flex-1
+                        py-2
+                        px-4
+                      "
+                      :placeholder="$t('team.permissions')"
+                      :name="'value' + index"
+                      :value="
+                        typeof member.role === 'string'
+                          ? member.role
+                          : JSON.stringify(member.role)
+                      "
+                      readonly
+                    />
+                  </span>
+                </template>
+                <SmartItem
+                  label="OWNER"
+                  @click.native="updateMemberRole(index, 'OWNER')"
+                />
+                <SmartItem
+                  label="EDITOR"
+                  @click.native="updateMemberRole(index, 'EDITOR')"
+                />
+                <SmartItem
+                  label="VIEWER"
+                  @click.native="updateMemberRole(index, 'VIEWER')"
+                />
+              </tippy>
+            </span>
+            <div class="flex">
+              <ButtonSecondary
+                id="member"
+                v-tippy="{ theme: 'tooltip' }"
+                :title="$t('action.remove')"
+                svg="trash"
+                color="red"
+                @click.native="removeExistingTeamMember(member.user.uid)"
               />
-              <template slot="popover">
-                <div>
-                  <button
-                    v-close-popover
-                    class="icon"
-                    @click="member.value = 'OWNER'"
-                  >
-                    OWNER
-                  </button>
-                </div>
-                <div>
-                  <button
-                    v-close-popover
-                    class="icon"
-                    @click="member.value = 'EDITOR'"
-                  >
-                    EDITOR
-                  </button>
-                </div>
-                <div>
-                  <button
-                    v-close-popover
-                    class="icon"
-                    @click="member.value = 'VIEWER'"
-                  >
-                    VIEWER
-                  </button>
-                </div>
-              </template>
-            </v-popover>
-          </span>
-        </li>
-        <div>
-          <li>
-            <button
-              id="member"
-              v-tooltip.bottom="$t('delete')"
-              class="icon"
-              @click="removeTeamMember(index)"
-            >
-              <i class="material-icons">delete</i>
-            </button>
-          </li>
+            </div>
+          </div>
+          <div
+            v-for="(member, index) in newMembers"
+            :key="`new-member-${index}`"
+            class="divide-x divide-dividerLight flex"
+          >
+            <input
+              v-model="member.key"
+              class="bg-transparent flex flex-1 py-2 px-4"
+              :placeholder="$t('team.email')"
+              :name="'member' + index"
+              autofocus
+            />
+            <span>
+              <tippy
+                :ref="`newMemberOptions-${index}`"
+                interactive
+                trigger="click"
+                theme="popover"
+                arrow
+              >
+                <template #trigger>
+                  <span class="select-wrapper">
+                    <input
+                      class="
+                        bg-transparent
+                        cursor-pointer
+                        flex flex-1
+                        py-2
+                        px-4
+                      "
+                      :placeholder="$t('team.permissions')"
+                      :name="'value' + index"
+                      :value="
+                        typeof member.value === 'string'
+                          ? member.value
+                          : JSON.stringify(member.value)
+                      "
+                      readonly
+                    />
+                  </span>
+                </template>
+                <SmartItem
+                  label="OWNER"
+                  @click.native="updateNewMemberRole(index, 'OWNER')"
+                />
+                <SmartItem
+                  label="EDITOR"
+                  @click.native="updateNewMemberRole(index, 'EDITOR')"
+                />
+                <SmartItem
+                  label="VIEWER"
+                  @click.native="updateNewMemberRole(index, 'VIEWER')"
+                />
+              </tippy>
+            </span>
+            <div class="flex">
+              <ButtonSecondary
+                id="member"
+                v-tippy="{ theme: 'tooltip' }"
+                :title="$t('action.remove')"
+                svg="trash"
+                color="red"
+                @click.native="removeTeamMember(index)"
+              />
+            </div>
+          </div>
+          <div
+            v-if="members.length === 0 && newMembers.length === 0"
+            class="
+              flex flex-col
+              text-secondaryLight
+              p-4
+              items-center
+              justify-center
+            "
+          >
+            <SmartIcon class="opacity-75 pb-2" name="users" />
+            <span class="text-center pb-4">
+              {{ $t("empty.members") }}
+            </span>
+            <ButtonSecondary
+              :label="$t('add.new')"
+              filled
+              @click.native="addTeamMember"
+            />
+          </div>
         </div>
-      </ul>
-      <ul>
-        <li>
-          <button class="icon" @click="addTeamMember">
-            <i class="material-icons">add</i>
-            <span>{{ $t("add_new") }}</span>
-          </button>
-        </li>
-      </ul>
-    </div>
-    <div slot="footer">
-      <div class="row-wrapper">
-        <span></span>
-        <span>
-          <button class="icon" @click="hideModal">
-            {{ $t("cancel") }}
-          </button>
-          <button class="icon primary" @click="saveTeam">
-            {{ $t("save") }}
-          </button>
-        </span>
       </div>
-    </div>
+    </template>
+    <template #footer>
+      <span>
+        <ButtonPrimary :label="$t('action.save')" @click.native="saveTeam" />
+        <ButtonSecondary
+          :label="$t('action.cancel')"
+          @click.native="hideModal"
+        />
+      </span>
+    </template>
   </SmartModal>
 </template>
 
 <script>
 import cloneDeep from "lodash/cloneDeep"
+import { defineComponent } from "@nuxtjs/composition-api"
 import * as teamUtils from "~/helpers/teams/utils"
 import TeamMemberAdapter from "~/helpers/teams/TeamMemberAdapter"
 
-export default {
+export default defineComponent({
   props: {
     show: Boolean,
     editingTeam: { type: Object, default: () => {} },
@@ -229,7 +211,6 @@ export default {
   data() {
     return {
       rename: null,
-      doneButton: '<i class="material-icons">done</i>',
       members: [],
       newMembers: [],
       membersAdapter: new TeamMemberAdapter(null),
@@ -259,29 +240,32 @@ export default {
     })
   },
   methods: {
-    updateRole(id, role) {
+    updateMemberRole(id, role) {
       this.members[id].role = role
+      this.$refs[`memberOptions-${id}`][0].tippy().hide()
+    },
+    updateNewMemberRole(id, role) {
+      this.newMembers[id].value = role
+      this.$refs[`newMemberOptions-${id}`][0].tippy().hide()
     },
     addTeamMember() {
-      const value = { key: "", value: "" }
-      this.newMembers.push(value)
+      const member = { key: "", value: "" }
+      this.newMembers.push(member)
     },
     removeExistingTeamMember(userID) {
       teamUtils
         .removeTeamMember(this.$apollo, userID, this.editingteamID)
         .then(() => {
-          // Result
-          this.$toast.success(this.$t("user_removed"), {
+          this.$toast.success(this.$t("team.member_removed"), {
             icon: "done",
           })
           this.hideModal()
         })
-        .catch((error) => {
-          // Error
-          this.$toast.error(this.$t("error_occurred"), {
-            icon: "done",
+        .catch((e) => {
+          this.$toast.error(this.$t("error.something_went_wrong"), {
+            icon: "error_outline",
           })
-          console.error(error)
+          console.error(e)
         })
     },
     removeTeamMember(index) {
@@ -302,18 +286,31 @@ export default {
         this.$data.rename !== null &&
         this.$data.rename.replace(/\s/g, "").length < 6
       ) {
-        this.$toast.error(this.$t("string_length_insufficient"), {
-          icon: "error",
+        this.$toast.error(this.$t("team.name_length_insufficient"), {
+          icon: "error_outline",
         })
         return
       }
+      let invalidEmail = false
       this.$data.newMembers.forEach((element) => {
         if (!this.validateEmail(element.key)) {
-          this.$toast.error(this.$t("invalid_emailID_format"), {
-            icon: "error",
+          this.$toast.error(this.$t("team.invalid_email_format"), {
+            icon: "error_outline",
           })
+          invalidEmail = true
         }
       })
+      if (invalidEmail) return
+      let invalidPermission = false
+      this.$data.newMembers.forEach((element) => {
+        if (!element.value) {
+          this.$toast.error(this.$t("invalid_member_permission"), {
+            icon: "error_outline",
+          })
+          invalidPermission = true
+        }
+      })
+      if (invalidPermission) return
       this.$data.newMembers.forEach((element) => {
         // Call to the graphql mutation
         teamUtils
@@ -324,21 +321,17 @@ export default {
             this.editingteamID
           )
           .then(() => {
-            // Result
-            this.$toast.success(this.$t("team_saved"), {
+            this.$toast.success(this.$t("team.saved"), {
               icon: "done",
             })
-            this.hideModal()
           })
-          .catch((error) => {
-            // Error
-            this.$toast.error(this.$t("error_occurred"), {
-              icon: "done",
+          .catch((e) => {
+            this.$toast.error(e, {
+              icon: "error_outline",
             })
-            console.error(error)
+            console.error(e)
           })
       })
-      let messageShown = true
       this.members.forEach((element) => {
         teamUtils
           .updateTeamMemberRole(
@@ -348,59 +341,47 @@ export default {
             this.editingteamID
           )
           .then(() => {
-            // Result
-            if (messageShown) {
-              this.$toast.success(this.$t("role_updated"), {
-                icon: "done",
-              })
-              messageShown = false
-            }
-            this.hideModal()
+            this.$toast.success(this.$t("team.member_role_updated"), {
+              icon: "done",
+            })
           })
-          .catch((error) => {
-            // Error
-            if (messageShown) {
-              this.$toast.error(this.$t("error_occurred"), {
-                icon: "done",
-              })
-              messageShown = false
-            }
-            console.error(error)
+          .catch((e) => {
+            this.$toast.error(e, {
+              icon: "error_outline",
+            })
+            console.error(e)
           })
       })
       if (this.$data.rename !== null) {
         const newName =
           this.name === this.$data.rename ? this.name : this.$data.rename
         if (!/\S/.test(newName))
-          return this.$toast.error(this.$t("team_name_empty"), {
-            icon: "error",
+          return this.$toast.error(this.$t("empty.team_name"), {
+            icon: "error_outline",
           })
         // Call to the graphql mutation
         if (this.name !== this.rename)
           teamUtils
             .renameTeam(this.$apollo, newName, this.editingteamID)
             .then(() => {
-              // Result
-              this.$toast.success(this.$t("team_saved"), {
+              this.$toast.success(this.$t("team.saved"), {
                 icon: "done",
               })
-              this.hideModal()
             })
-            .catch((error) => {
-              // Error
-              this.$toast.error(this.$t("error_occurred"), {
-                icon: "done",
+            .catch((e) => {
+              this.$toast.error(this.$t("error.something_went_wrong"), {
+                icon: "error_outline",
               })
-              console.error(error)
+              console.error(e)
             })
       }
       this.hideModal()
-      this.newMembers = []
     },
     hideModal() {
       this.rename = null
+      this.newMembers = []
       this.$emit("hide-modal")
     },
   },
-}
+})
 </script>

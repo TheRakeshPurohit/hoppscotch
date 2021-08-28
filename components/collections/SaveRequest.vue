@@ -1,62 +1,59 @@
 <template>
-  <SmartModal v-if="show" @close="hideModal">
-    <div slot="header">
-      <div class="row-wrapper">
-        <h3 class="title">{{ $t("save_request_as") }}</h3>
-        <div>
-          <button class="icon" @click="hideModal">
-            <i class="material-icons">close</i>
-          </button>
+  <SmartModal v-if="show" :title="$t('collection.save_as')" @close="hideModal">
+    <template #body>
+      <div class="flex flex-col px-2">
+        <div class="flex relative">
+          <input
+            id="selectLabelSaveReq"
+            v-model="requestName"
+            v-focus
+            class="input floating-input"
+            placeholder=" "
+            type="text"
+            @keyup.enter="saveRequestAs"
+          />
+          <label for="selectLabelSaveReq">
+            {{ $t("request.name") }}
+          </label>
         </div>
+        <label class="px-4 pt-4 pb-4">
+          {{ $t("collection.select_location") }}
+        </label>
+        <CollectionsGraphql
+          v-if="mode === 'graphql'"
+          :doc="false"
+          :show-coll-actions="false"
+          :picked="picked"
+          :saving-mode="true"
+          @select="onSelect"
+        />
+        <Collections
+          v-else
+          :picked="picked"
+          :save-request="true"
+          @select="onSelect"
+          @update-collection="collectionsType.type = $event"
+          @update-coll-type="onUpdateCollType"
+        />
       </div>
-    </div>
-    <div slot="body" class="flex flex-col">
-      <label for="selectLabel">{{ $t("token_req_name") }}</label>
-      <input
-        id="selectLabel"
-        v-model="requestData.name"
-        type="text"
-        @keyup.enter="saveRequestAs"
-      />
-      <label for="selectLabel">Select location</label>
-      <!-- <input readonly :value="path" /> -->
-
-      <CollectionsGraphql
-        v-if="mode === 'graphql'"
-        :doc="false"
-        :show-coll-actions="false"
-        :picked="picked"
-        :saving-mode="true"
-        @select="onSelect"
-      />
-
-      <Collections
-        v-else
-        :picked="picked"
-        :save-request="true"
-        @select="onSelect"
-        @update-collection="collectionsType.type = $event"
-        @update-coll-type="onUpdateCollType"
-      />
-    </div>
-    <div slot="footer">
-      <div class="row-wrapper">
-        <span></span>
-        <span>
-          <button class="icon" @click="hideModal">
-            {{ $t("cancel") }}
-          </button>
-          <button class="icon primary" @click="saveRequestAs">
-            {{ $t("save") }}
-          </button>
-        </span>
-      </div>
-    </div>
+    </template>
+    <template #footer>
+      <span>
+        <ButtonPrimary
+          :label="$t('action.save')"
+          @click.native="saveRequestAs"
+        />
+        <ButtonSecondary
+          :label="$t('action.cancel')"
+          @click.native="hideModal"
+        />
+      </span>
+    </template>
   </SmartModal>
 </template>
 
 <script>
-import { getSettingSubject } from "~/newstore/settings"
+import { defineComponent } from "@nuxtjs/composition-api"
 import * as teamUtils from "~/helpers/teams/utils"
 import {
   saveRESTRequestAs,
@@ -64,20 +61,29 @@ import {
   editGraphqlRequest,
   saveGraphqlRequestAs,
 } from "~/newstore/collections"
+import { getGQLSession, useGQLRequestName } from "~/newstore/GQLSession"
+import {
+  getRESTRequest,
+  useRESTRequestName,
+  setRESTSaveContext,
+} from "~/newstore/RESTSession"
 
-export default {
+export default defineComponent({
   props: {
     // mode can be either "graphql" or "rest"
     mode: { type: String, default: "rest" },
     show: Boolean,
-    editingRequest: { type: Object, default: () => {} },
+  },
+  setup(props) {
+    return {
+      requestName:
+        props.mode === "rest" ? useRESTRequestName() : useGQLRequestName(),
+    }
   },
   data() {
     return {
-      defaultRequestName: "Untitled Request",
-      path: "Path will appear here",
       requestData: {
-        name: undefined,
+        name: this.requestName,
         collectionIndex: undefined,
         folderName: undefined,
         requestIndex: undefined,
@@ -88,52 +94,6 @@ export default {
       },
       picked: null,
     }
-  },
-  subscriptions() {
-    return {
-      SYNC_COLLECTIONS: getSettingSubject("syncCollections"),
-    }
-  },
-  computed: {
-    folders() {
-      const collections = this.$store.state.postwoman.collections
-      const collectionIndex = this.$data.requestData.collectionIndex
-      const userSelectedAnyCollection = collectionIndex !== undefined
-      if (!userSelectedAnyCollection) return []
-
-      const noCollectionAvailable = collections[collectionIndex] !== undefined
-      if (!noCollectionAvailable) return []
-
-      return getFolderNames(collections[collectionIndex].folders, [])
-    },
-    requests() {
-      const collections = this.$store.state.postwoman.collections
-      const collectionIndex = this.$data.requestData.collectionIndex
-      const folderName = this.$data.requestData.folderName
-
-      const userSelectedAnyCollection = collectionIndex !== undefined
-      if (!userSelectedAnyCollection) {
-        return []
-      }
-
-      const userSelectedAnyFolder =
-        folderName !== undefined && folderName !== ""
-
-      if (userSelectedAnyFolder) {
-        const collection = collections[collectionIndex]
-        const folder = findFolder(folderName, collection)
-        return folder.requests
-      } else {
-        const collection = collections[collectionIndex]
-        const noCollectionAvailable = collection !== undefined
-
-        if (!noCollectionAvailable) {
-          return []
-        }
-
-        return collection.requests
-      }
-    },
   },
   watch: {
     "requestData.collectionIndex": function resetFolderAndRequestIndex() {
@@ -156,24 +116,22 @@ export default {
     onSelect({ picked }) {
       this.picked = picked
     },
-    saveRequestAs() {
-      if (this.picked == null) {
-        this.$toast.error(this.$t("select_collection"), {
-          icon: "error",
+    async saveRequestAs() {
+      if (!this.requestName) {
+        this.$toast.error(this.$t("error.empty_req_name"), {
+          icon: "error_outline",
         })
         return
       }
-      if (this.$data.requestData.name.length === 0) {
-        this.$toast.error(this.$t("empty_req_name"), {
-          icon: "error",
+      if (this.picked == null) {
+        this.$toast.error(this.$t("collection.select"), {
+          icon: "error_outline",
         })
         return
       }
 
-      const requestUpdated = {
-        ...this.$props.editingRequest,
-        name: this.$data.requestData.name,
-      }
+      const requestUpdated =
+        this.mode === "rest" ? getRESTRequest() : getGQLSession()
 
       // Filter out all REST file inputs
       if (this.mode === "rest" && requestUpdated.bodyParams) {
@@ -188,10 +146,31 @@ export default {
           this.picked.requestIndex,
           requestUpdated
         )
+        setRESTSaveContext({
+          originLocation: "user-collection",
+          folderPath: this.picked.folderPath,
+          requestIndex: this.picked.requestIndex,
+        })
       } else if (this.picked.pickedType === "my-folder") {
-        saveRESTRequestAs(this.picked.folderPath, requestUpdated)
+        const insertionIndex = saveRESTRequestAs(
+          this.picked.folderPath,
+          requestUpdated
+        )
+        setRESTSaveContext({
+          originLocation: "user-collection",
+          folderPath: this.picked.folderPath,
+          requestIndex: insertionIndex,
+        })
       } else if (this.picked.pickedType === "my-collection") {
-        saveRESTRequestAs(`${this.picked.collectionIndex}`, requestUpdated)
+        const insertionIndex = saveRESTRequestAs(
+          `${this.picked.collectionIndex}`,
+          requestUpdated
+        )
+        setRESTSaveContext({
+          originLocation: "user-collection",
+          folderPath: `${this.picked.collectionIndex}`,
+          requestIndex: insertionIndex,
+        })
       } else if (this.picked.pickedType === "teams-request") {
         teamUtils.overwriteRequestTeams(
           this.$apollo,
@@ -199,22 +178,44 @@ export default {
           requestUpdated.name,
           this.picked.requestID
         )
+        setRESTSaveContext({
+          originLocation: "team-collection",
+          requestID: this.picked.requestID,
+        })
       } else if (this.picked.pickedType === "teams-folder") {
-        teamUtils.saveRequestAsTeams(
+        const req = await teamUtils.saveRequestAsTeams(
           this.$apollo,
           JSON.stringify(requestUpdated),
           requestUpdated.name,
           this.collectionsType.selectedTeam.id,
           this.picked.folderID
         )
+
+        if (req && req.id) {
+          setRESTSaveContext({
+            originLocation: "team-collection",
+            requestID: req.id,
+            teamID: this.collectionsType.selectedTeam.id,
+            collectionID: this.picked.folderID,
+          })
+        }
       } else if (this.picked.pickedType === "teams-collection") {
-        teamUtils.saveRequestAsTeams(
+        const req = await teamUtils.saveRequestAsTeams(
           this.$apollo,
           JSON.stringify(requestUpdated),
           requestUpdated.name,
           this.collectionsType.selectedTeam.id,
           this.picked.collectionID
         )
+
+        if (req && req.id) {
+          setRESTSaveContext({
+            originLocation: "team-collection",
+            requestID: req.id,
+            teamID: this.collectionsType.selectedTeam.id,
+            collectionID: this.picked.collectionID,
+          })
+        }
       } else if (this.picked.pickedType === "gql-my-request") {
         editGraphqlRequest(
           this.picked.folderPath,
@@ -226,9 +227,10 @@ export default {
       } else if (this.picked.pickedType === "gql-my-collection") {
         saveGraphqlRequestAs(`${this.picked.collectionIndex}`, requestUpdated)
       }
-      this.$toast.success("Requested added", {
-        icon: "done",
+      this.$toast.success(this.$t("request.added"), {
+        icon: "post_add",
       })
+
       this.hideModal()
     },
     hideModal() {
@@ -236,37 +238,5 @@ export default {
       this.$emit("hide-modal")
     },
   },
-}
-
-function getFolderNames(folders, namesList, folderName = "") {
-  if (folders.length) {
-    folders.forEach((folder) => {
-      namesList.push(folderName + folder.name)
-      if (folder.folders && folder.folders.length) {
-        getFolderNames(folder.folders, namesList, folder.name + "/")
-      }
-    })
-  }
-  return namesList
-}
-
-function findFolder(folderName, currentFolder) {
-  let selectedFolder
-  let result
-
-  if (folderName === currentFolder.name) {
-    return currentFolder
-  }
-
-  for (let i = 0; i < currentFolder.folders.length; i++) {
-    selectedFolder = currentFolder.folders[i]
-
-    result = findFolder(folderName, selectedFolder)
-
-    if (result !== false) {
-      return result
-    }
-  }
-  return false
-}
+})
 </script>

@@ -1,72 +1,68 @@
 <template>
-  <div class="flex flex-col">
-    <label>
-      <ColorScheme placeholder="..." tag="span">
-        {{ $t("background") }}:
-        {{
-          $colorMode.preference.charAt(0).toUpperCase() +
-          $colorMode.preference.slice(1)
-        }}
-        <span v-if="$colorMode.preference === 'system'">
-          ({{ $colorMode.value }} mode detected)
-        </span>
-      </ColorScheme>
-    </label>
-    <div>
-      <span
-        v-for="(color, index) of colors"
-        :key="`color-${index}`"
-        v-tooltip="`${color.charAt(0).toUpperCase()}${color.slice(1)}`"
-        class="
-          inline-flex
-          items-center
-          justify-center
-          p-3
-          m-2
-          transition
-          duration-150
-          ease-in-out
-          bg-transparent
-          rounded-full
-          cursor-pointer
-          border-collapseer-2
-          text-secondaryLight
-          hover:text-secondary
-        "
-        :class="[
-          { 'bg-primary': color === $colorMode.preference },
-          { 'text-accent hover:text-accent': color === $colorMode.value },
-        ]"
-        @click="$colorMode.preference = color"
-      >
-        <i class="material-icons">{{ getIcon(color) }}</i>
-      </span>
-    </div>
+  <div class="flex">
+    <ButtonSecondary
+      v-for="(color, index) of colors"
+      :key="`color-${index}`"
+      v-tippy="{ theme: 'tooltip' }"
+      :title="$t(getColorModeName(color))"
+      :class="{
+        'bg-primaryLight !text-accent hover:text-accent': color === active,
+      }"
+      class="rounded"
+      :svg="getIcon(color)"
+      @click.native="setBGMode(color)"
+    />
   </div>
 </template>
 
-<script>
-export default {
-  data() {
+<script lang="ts">
+import { defineComponent } from "@nuxtjs/composition-api"
+import {
+  applySetting,
+  HoppBgColor,
+  HoppBgColors,
+  useSetting,
+} from "~/newstore/settings"
+
+export default defineComponent({
+  setup() {
     return {
-      colors: ["system", "light", "dark", "black"],
+      colors: HoppBgColors,
+      active: useSetting("BG_COLOR"),
     }
   },
   methods: {
-    getIcon(color) {
+    setBGMode(color: HoppBgColor) {
+      applySetting("BG_COLOR", color)
+    },
+    getIcon(color: HoppBgColor) {
       switch (color) {
         case "system":
-          return "desktop_windows"
+          return "monitor"
         case "light":
-          return "wb_sunny"
+          return "sun"
         case "dark":
-          return "nights_stay"
+          return "cloud"
         case "black":
-          return "bedtime"
+          return "moon"
         default:
-          return "desktop_windows"
+          return "monitor"
+      }
+    },
+    getColorModeName(colorMode: string) {
+      switch (colorMode) {
+        case "system":
+          return "settings.system_mode"
+        case "light":
+          return "settings.light_mode"
+        case "dark":
+          return "settings.dark_mode"
+        case "black":
+          return "settings.black_mode"
+        default:
+          return "settings.system_mode"
       }
     },
   },
-}
+})
 </script>

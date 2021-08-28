@@ -1,69 +1,62 @@
 <template>
   <div>
-    <div class="row-wrapper">
-      <label for="body">{{ $t("response_body") }}</label>
-      <div>
-        <button
+    <div
+      class="
+        bg-primary
+        border-b border-dividerLight
+        flex flex-1
+        top-lowerSecondaryStickyFold
+        pl-4
+        z-10
+        sticky
+        items-center
+        justify-between
+      "
+    >
+      <label class="font-semibold text-secondaryLight">
+        {{ $t("response.body") }}
+      </label>
+      <div class="flex">
+        <ButtonSecondary
           v-if="response.body"
-          ref="ToggleExpandResponse"
-          v-tooltip="{
-            content: !expandResponse
-              ? $t('expand_response')
-              : $t('collapse_response'),
-          }"
-          class="icon"
-          @click="ToggleExpandResponse"
-        >
-          <i class="material-icons">
-            {{ !expandResponse ? "unfold_more" : "unfold_less" }}
-          </i>
-        </button>
-        <button
-          v-if="response.body"
-          v-tooltip="{
-            content: previewEnabled ? $t('hide_preview') : $t('preview_html'),
-          }"
-          class="icon"
-          @click.prevent="togglePreview"
-        >
-          <i class="material-icons">
-            {{ !previewEnabled ? "visibility" : "visibility_off" }}
-          </i>
-        </button>
-        <button
+          v-tippy="{ theme: 'tooltip' }"
+          :title="
+            previewEnabled ? $t('hide.preview') : $t('response.preview_html')
+          "
+          :svg="!previewEnabled ? 'eye' : 'eye-off'"
+          @click.native.prevent="togglePreview"
+        />
+        <ButtonSecondary
           v-if="response.body"
           ref="downloadResponse"
-          v-tooltip="$t('download_file')"
-          class="icon"
-          @click="downloadResponse"
-        >
-          <i class="material-icons">save_alt</i>
-        </button>
-        <button
+          v-tippy="{ theme: 'tooltip' }"
+          :title="$t('action.download_file')"
+          :svg="downloadIcon"
+          @click.native="downloadResponse"
+        />
+        <ButtonSecondary
           v-if="response.body"
           ref="copyResponse"
-          v-tooltip="$t('copy_response')"
-          class="icon"
-          @click="copyResponse"
-        >
-          <i class="material-icons">content_copy</i>
-        </button>
+          v-tippy="{ theme: 'tooltip' }"
+          :title="$t('action.copy')"
+          :svg="copyIcon"
+          @click.native="copyResponse"
+        />
       </div>
     </div>
-    <div id="response-details-wrapper">
+    <div class="relative">
       <SmartAceEditor
         :value="responseBodyText"
         :lang="'html'"
         :options="{
-          maxLines: responseBodyMaxLines,
-          minLines: '16',
-          fontSize: '16px',
+          maxLines: Infinity,
+          minLines: 16,
           autoScrollEditorIntoView: true,
           readOnly: true,
           showPrintMargin: false,
           useWorker: false,
         }"
-        styles="rounded-b-lg"
+        styles="border-b border-dividerLight"
       />
       <iframe
         ref="previewFrame"
@@ -76,29 +69,23 @@
 </template>
 
 <script>
+import { defineComponent } from "@nuxtjs/composition-api"
 import TextContentRendererMixin from "./mixins/TextContentRendererMixin"
+import { copyToClipboard } from "~/helpers/utils/clipboard"
 
-export default {
+export default defineComponent({
   mixins: [TextContentRendererMixin],
   props: {
     response: { type: Object, default: () => {} },
   },
   data() {
     return {
-      expandResponse: false,
-      responseBodyMaxLines: 16,
-      doneButton: '<i class="material-icons">done</i>',
-      downloadButton: '<i class="material-icons">save_alt</i>',
-      copyButton: '<i class="material-icons">content_copy</i>',
+      downloadIcon: "download",
+      copyIcon: "copy",
       previewEnabled: false,
     }
   },
   methods: {
-    ToggleExpandResponse() {
-      this.expandResponse = !this.expandResponse
-      this.responseBodyMaxLines =
-        this.responseBodyMaxLines === Infinity ? 16 : Infinity
-    },
     downloadResponse() {
       const dataToWrite = this.responseBodyText
       const file = new Blob([dataToWrite], { type: "text/html" })
@@ -109,32 +96,23 @@ export default {
       a.download = `${url.split("/").pop().split("#")[0].split("?")[0]}`
       document.body.appendChild(a)
       a.click()
-      this.$refs.downloadResponse.innerHTML = this.doneButton
-      this.$toast.success(this.$t("download_started"), {
-        icon: "done",
+      this.downloadIcon = "check"
+      this.$toast.success(this.$t("state.download_started"), {
+        icon: "downloading",
       })
       setTimeout(() => {
         document.body.removeChild(a)
-        window.URL.revokeObjectURL(url)
-        this.$refs.downloadResponse.innerHTML = this.downloadButton
+        URL.revokeObjectURL(url)
+        this.downloadIcon = "download"
       }, 1000)
     },
     copyResponse() {
-      this.$refs.copyResponse.innerHTML = this.doneButton
-      this.$toast.success(this.$t("copied_to_clipboard"), {
-        icon: "done",
+      copyToClipboard(this.responseBodyText)
+      this.copyIcon = "check"
+      this.$toast.success(this.$t("state.copied_to_clipboard"), {
+        icon: "content_paste",
       })
-      const aux = document.createElement("textarea")
-      const copy = this.responseBodyText
-      aux.innerText = copy
-      document.body.appendChild(aux)
-      aux.select()
-      document.execCommand("copy")
-      document.body.removeChild(aux)
-      setTimeout(
-        () => (this.$refs.copyResponse.innerHTML = this.copyButton),
-        1000
-      )
+      setTimeout(() => (this.copyIcon = "copy"), 1000)
     },
     togglePreview() {
       this.previewEnabled = !this.previewEnabled
@@ -159,5 +137,17 @@ export default {
       }
     },
   },
-}
+})
 </script>
+
+<style lang="scss" scoped>
+.covers-response {
+  @apply absolute;
+  @apply inset-0;
+  @apply bg-white;
+  @apply h-full;
+  @apply w-full;
+  @apply border;
+  @apply border-dividerLight;
+}
+</style>

@@ -1,312 +1,125 @@
 <template>
-  <TranslateSlideRight appear>
-    <aside class="nav-first">
-      <nav class="primary-nav">
-        <!--
-        We're using manual checks for linkActive because the query string
-        seems to mess up the nuxt-link active class.
-      -->
-        <nuxt-link
-          v-tooltip.right="$t('home')"
-          :to="localePath('index')"
-          :class="linkActive('/')"
-          :aria-label="$t('home')"
-        >
-          <AppLogo alt class="material-icons" style="height: 24px" />
-        </nuxt-link>
-        <nuxt-link
-          v-tooltip.right="$t('realtime')"
-          :to="localePath('realtime')"
-          :class="linkActive('/realtime')"
-        >
-          <i class="material-icons">language</i>
-        </nuxt-link>
-        <nuxt-link
-          v-tooltip.right="$t('graphql')"
-          :to="localePath('graphql')"
-          :class="linkActive('/graphql')"
-          :aria-label="$t('graphql')"
-        >
-          <svg
-            xmlns="http://www.w3.org/2000/svg"
-            height="24"
-            width="24"
-            viewBox="0 0 29.999 30"
-          >
-            <path d="M4.08 22.864l-1.1-.636L15.248.98l1.1.636z" />
-            <path d="M2.727 20.53h24.538v1.272H2.727z" />
-            <path
-              d="M15.486 28.332L3.213 21.246l.636-1.1 12.273 7.086zm10.662-18.47L13.874 2.777l.636-1.1 12.273 7.086z"
-            />
-            <path d="M3.852 9.858l-.636-1.1L15.5 1.67l.636 1.1z" />
-            <path
-              d="M25.922 22.864l-12.27-21.25 1.1-.636 12.27 21.25zM3.7 7.914h1.272v14.172H3.7zm21.328 0H26.3v14.172h-1.272z"
-            />
-            <path d="M15.27 27.793l-.555-.962 10.675-6.163.555.962z" />
-            <path
-              d="M27.985 22.5a2.68 2.68 0 01-3.654.981 2.68 2.68 0 01-.981-3.654 2.68 2.68 0 013.654-.981 2.665 2.665 0 01.98 3.654M6.642 10.174a2.68 2.68 0 01-3.654.981A2.68 2.68 0 012.007 7.5a2.68 2.68 0 013.654-.981 2.68 2.68 0 01.981 3.654M2.015 22.5a2.68 2.68 0 01.981-3.654 2.68 2.68 0 013.654.981 2.68 2.68 0 01-.981 3.654c-1.287.735-2.92.3-3.654-.98m21.343-12.326a2.68 2.68 0 01.981-3.654 2.68 2.68 0 013.654.981 2.68 2.68 0 01-.981 3.654 2.68 2.68 0 01-3.654-.981M15 30a2.674 2.674 0 112.674-2.673A2.68 2.68 0 0115 30m0-24.652a2.67 2.67 0 01-2.674-2.674 2.67 2.67 0 115.347 0A2.67 2.67 0 0115 5.347"
-            />
-          </svg>
-        </nuxt-link>
-        <nuxt-link
-          v-tooltip.right="$t('documentation')"
-          :to="localePath('doc')"
-          :class="linkActive('/doc')"
-          :aria-label="$t('documentation')"
-        >
-          <i class="material-icons">topic</i>
-        </nuxt-link>
-        <nuxt-link
-          v-tooltip.right="$t('settings')"
-          :to="localePath('settings')"
-          :class="linkActive('/settings')"
-          :aria-label="$t('settings')"
-        >
-          <i class="material-icons">settings</i>
-        </nuxt-link>
-      </nav>
-      <nav v-if="$route.path == '/'" class="secondary-nav">
-        <a v-tooltip.right="$t('request')" href="#request">
-          <i class="material-icons">cloud_upload</i>
-        </a>
-        <a v-tooltip.right="$t('options')" href="#options">
-          <i class="material-icons">toc</i>
-        </a>
-        <a v-tooltip.right="$t('response')" href="#response">
-          <i class="material-icons">cloud_download</i>
-        </a>
-      </nav>
-      <nav v-else-if="$route.path.includes('/realtime')" class="secondary-nav">
-        <a v-tooltip.right="$t('request')" href="#request">
-          <i class="material-icons">cloud_upload</i>
-        </a>
-        <a v-tooltip.right="$t('communication')" href="#response">
-          <i class="material-icons">cloud_download</i>
-        </a>
-      </nav>
-      <nav v-else-if="$route.path.includes('/graphql')" class="secondary-nav">
-        <a v-tooltip.right="$t('endpoint')" href="#endpoint">
-          <i class="material-icons">cloud</i>
-        </a>
-        <a v-tooltip.right="$t('schema')" href="#schema">
-          <i class="material-icons">assignment_returned</i>
-        </a>
-        <a v-tooltip.right="$t('query')" href="#query">
-          <i class="material-icons">cloud_upload</i>
-        </a>
-        <a v-tooltip.right="$t('response')" href="#response">
-          <i class="material-icons">cloud_download</i>
-        </a>
-      </nav>
-      <nav v-else-if="$route.path.includes('/doc')" class="secondary-nav">
-        <a v-tooltip.right="$t('import')" href="#import">
-          <i class="material-icons">folder</i>
-        </a>
-        <a v-tooltip.right="$t('documentation')" href="#documentation">
-          <i class="material-icons">insert_drive_file</i>
-        </a>
-      </nav>
-      <nav v-else-if="$route.path.includes('/settings')" class="secondary-nav">
-        <a v-tooltip.right="$t('account')" href="#account">
-          <i class="material-icons">person</i>
-        </a>
-        <a v-tooltip.right="$t('theme')" href="#theme">
-          <i class="material-icons">brush</i>
-        </a>
-        <a v-tooltip.right="$t('extensions')" href="#extensions">
-          <i class="material-icons">extension</i>
-        </a>
-        <a v-tooltip.right="$t('proxy')" href="#proxy">
-          <i class="material-icons">public</i>
-        </a>
-      </nav>
-    </aside>
-  </TranslateSlideRight>
+  <aside class="flex h-full justify-between md:flex-col">
+    <nav class="flex flex-nowrap md:flex-col">
+      <NuxtLink
+        v-for="(navigation, index) in primaryNavigation"
+        :key="`navigation-${index}`"
+        :to="localePath(navigation.target)"
+        class="nav-link"
+        tabindex="0"
+      >
+        <i v-if="navigation.icon" class="material-icons">
+          {{ navigation.icon }}
+        </i>
+        <div v-if="navigation.svg">
+          <SmartIcon :name="navigation.svg" class="svg-icons" />
+        </div>
+        <span v-if="LEFT_SIDEBAR">{{ navigation.title }}</span>
+      </NuxtLink>
+    </nav>
+  </aside>
 </template>
 
-<script>
-export default {
-  mounted() {
-    window.addEventListener("scroll", () => {
-      const mainNavLinks = document.querySelectorAll("nav.secondary-nav a")
-      const fromTop = window.scrollY
-      mainNavLinks.forEach(({ hash, classList }) => {
-        const section = document.querySelector(hash)
-        if (
-          section &&
-          section.offsetTop <= fromTop &&
-          section.offsetTop + section.offsetHeight > fromTop
-        ) {
-          classList.add("current")
-        } else {
-          classList.remove("current")
-        }
-      })
-    })
+<script lang="ts">
+import { defineComponent } from "@nuxtjs/composition-api"
+import { useSetting } from "~/newstore/settings"
+
+export default defineComponent({
+  setup() {
+    return {
+      LEFT_SIDEBAR: useSetting("LEFT_SIDEBAR"),
+    }
   },
-  methods: {
-    linkActive(path) {
-      return {
-        "nuxt-link-exact-active": this.$route.path === path,
-        "nuxt-link-active": this.$route.path === path,
-      }
-    },
+  data() {
+    return {
+      primaryNavigation: [
+        {
+          target: "index",
+          svg: "link-2",
+          title: this.$t("navigation.rest"),
+        },
+        {
+          target: "graphql",
+          svg: "graphql",
+          title: this.$t("navigation.graphql"),
+        },
+        {
+          target: "realtime",
+          svg: "globe",
+          title: this.$t("navigation.realtime"),
+        },
+        {
+          target: "documentation",
+          svg: "book-open",
+          title: this.$t("navigation.doc"),
+        },
+        {
+          target: "settings",
+          svg: "settings",
+          title: this.$t("navigation.settings"),
+        },
+      ],
+    }
   },
-}
+})
 </script>
 
 <style scoped lang="scss">
-$responsiveWidth: 767px;
-
-.nav-first {
-  @apply h-screen;
-  @apply p-2;
-  @apply bg-primaryDark;
-  @apply transition;
-  @apply ease-in-out;
-  @apply duration-150;
-  @apply space-y-2;
-}
-
-nav.primary-nav {
-  @apply flex;
-  @apply flex-col;
-  @apply flex-nowrap;
+.nav-link {
+  @apply relative;
+  @apply p-4;
+  @apply flex flex-col flex-1;
   @apply items-center;
   @apply justify-center;
-  @apply space-y-2;
-  @apply w-full;
+  @apply hover:(bg-primaryDark text-secondaryDark);
+  @apply focus-visible:text-secondaryDark;
 
-  svg {
-    @apply fill-current;
-  }
-
-  a {
-    @apply inline-flex;
-    @apply items-center;
-    @apply justify-center;
-    @apply flex-shrink-0;
-    @apply p-4;
-    @apply rounded-full;
-    @apply bg-primaryLight;
-    @apply text-secondaryLight;
-    @apply fill-current;
-    @apply outline-none;
-    @apply transition;
-    @apply ease-in-out;
-    @apply duration-150;
-
-    border-radius: 50%;
-    transition-property: all !important;
-
-    &:hover {
-      @apply text-secondary;
-      @apply fill-current;
-
-      svg {
-        @apply fill-current;
-      }
-    }
-
-    &.nuxt-link-exact-active {
-      @apply bg-accent;
-      @apply text-primary;
-      @apply fill-current;
-
-      border-radius: 16px;
-
-      svg {
-        @apply fill-current;
-      }
-    }
-  }
-}
-
-nav.primary-nav::-webkit-scrollbar,
-.nav-first::-webkit-scrollbar {
-  @apply hidden;
-}
-
-nav.secondary-nav {
-  @apply flex;
-  @apply flex-col;
-  @apply flex-nowrap;
-  @apply items-center;
-  @apply justify-center;
-  @apply border-t-2;
-  @apply border-dashed;
-  @apply border-divider;
-  @apply pt-2;
-  @apply space-y-2;
-
-  a {
-    @apply inline-flex;
-    @apply items-center;
-    @apply justify-center;
-    @apply flex-shrink-0;
-    @apply p-4;
-    @apply rounded-full;
-    @apply bg-primaryDark;
-    @apply text-secondaryLight;
-    @apply fill-current;
-    @apply outline-none;
-    @apply transition;
-    @apply ease-in-out;
-    @apply duration-150;
-
-    &:hover {
-      @apply text-secondary;
-      @apply fill-current;
-    }
-
-    &.current {
-      @apply text-accent;
-      @apply fill-current;
-    }
-  }
-}
-
-@media (max-width: $responsiveWidth) {
-  .nav-first {
-    @apply fixed;
-    @apply z-10;
-    @apply top-auto;
+  &::after {
+    @apply absolute;
+    @apply inset-x-0;
+    @apply md:inset-x-auto;
+    @apply md:inset-y-0;
     @apply bottom-0;
-    @apply h-auto;
-    @apply p-0;
+    @apply md:bottom-auto;
+    @apply md:left-0;
+    @apply z-2;
+    @apply h-0.5;
+    @apply md:h-full;
     @apply w-full;
-    @apply bg-primary;
-    @apply shadow-2xl;
+    @apply md:w-0.5;
+
+    content: "";
   }
 
-  nav.primary-nav {
-    @apply flex-row;
-    @apply flex-nowrap;
-    @apply overflow-auto;
-    @apply bg-primaryDark;
-    @apply space-y-0;
+  &:focus::after {
+    @apply bg-divider;
+  }
 
-    padding-bottom: env(safe-area-inset-bottom);
+  .material-icons,
+  .svg-icons {
+    @apply opacity-75;
+  }
 
-    a {
-      @apply bg-transparent;
-      @apply my-2;
-      @apply flex-1;
+  span {
+    @apply mt-2;
+    @apply font-font-medium;
 
-      &.nuxt-link-exact-active {
-        @apply bg-transparent;
-        @apply text-accent;
-        @apply fill-current;
+    font-size: calc(var(--body-font-size) - 0.062rem);
+  }
 
-        svg {
-          @apply fill-current;
-        }
-      }
+  &.exact-active-link {
+    @apply text-secondaryDark;
+    @apply bg-primaryLight;
+    @apply hover:text-secondaryDark;
+
+    .material-icons,
+    .svg-icons {
+      @apply opacity-100;
     }
-  }
 
-  nav.secondary-nav {
-    @apply hidden;
+    &::after {
+      @apply bg-accent;
+    }
   }
 }
 </style>

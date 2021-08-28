@@ -1,63 +1,45 @@
 <template>
-  <SmartModal v-if="show" @close="hideModal">
-    <div slot="header">
-      <div class="row-wrapper">
-        <h3 class="title">{{ $t("confirm") }}</h3>
-        <div>
-          <button class="icon" @click="hideModal">
-            <i class="material-icons">close</i>
-          </button>
-        </div>
+  <SmartModal
+    v-if="show"
+    dialog
+    :title="$t('modal.confirm')"
+    @close="hideModal"
+  >
+    <template #body>
+      <div class="flex flex-col px-2">
+        <label>
+          {{ title }}
+        </label>
       </div>
-    </div>
-    <div slot="body" class="flex flex-col">
-      <label>{{ title }}</label>
-    </div>
-    <div slot="footer">
-      <div class="row-wrapper">
-        <span></span>
-        <span>
-          <button class="icon" @click="hideModal">
-            {{ no }}
-          </button>
-          <button class="icon primary" @click="resolve">
-            {{ yes }}
-          </button>
-        </span>
-      </div>
-    </div>
+    </template>
+    <template #footer>
+      <span>
+        <ButtonPrimary v-focus :label="yes" @click.native="resolve" />
+        <ButtonSecondary :label="no" @click.native="hideModal" />
+      </span>
+    </template>
   </SmartModal>
 </template>
 
 <script>
-export default {
+import { defineComponent } from "@nuxtjs/composition-api"
+
+export default defineComponent({
   props: {
     show: Boolean,
     title: { type: String, default: null },
     yes: {
       type: String,
       default() {
-        return this.$t("yes")
+        return this.$t("action.yes")
       },
     },
     no: {
       type: String,
       default() {
-        return this.$t("no")
+        return this.$t("action.no")
       },
     },
-  },
-  mounted() {
-    this._keyListener = function (e) {
-      if (e.key === "Escape") {
-        e.preventDefault()
-        this.hideModal()
-      }
-    }
-    document.addEventListener("keydown", this._keyListener.bind(this))
-  },
-  beforeDestroy() {
-    document.removeEventListener("keydown", this._keyListener)
   },
   methods: {
     hideModal() {
@@ -65,7 +47,8 @@ export default {
     },
     resolve() {
       this.$emit("resolve")
+      this.$emit("hide-modal")
     },
   },
-}
+})
 </script>

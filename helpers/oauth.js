@@ -1,3 +1,9 @@
+import {
+  getLocalConfig,
+  setLocalConfig,
+  removeLocalConfig,
+} from "~/newstore/localpersistence"
+
 const redirectUri = `${window.location.origin}/`
 
 // GENERAL HELPER FUNCTIONS
@@ -25,9 +31,8 @@ const sendPostRequest = async (url, params) => {
     const response = await fetch(url, options)
     const data = await response.json()
     return data
-  } catch (err) {
-    console.error("Request failed", err)
-    throw err
+  } catch (e) {
+    console.error(e)
   }
 }
 
@@ -67,9 +72,8 @@ const getTokenConfiguration = async (endpoint) => {
     const response = await fetch(endpoint, options)
     const config = await response.json()
     return config
-  } catch (err) {
-    console.error("Request failed", err)
-    throw err
+  } catch (e) {
+    console.error(e)
   }
 }
 
@@ -148,23 +152,26 @@ const tokenRequest = async ({
 }) => {
   // Check oauth configuration
   if (oidcDiscoveryUrl !== "") {
-    const { authorizationEndpoint, tokenEndpoint } =
+    // eslint-disable-next-line camelcase
+    const { authorization_endpoint, token_endpoint } =
       await getTokenConfiguration(oidcDiscoveryUrl)
-    authUrl = authorizationEndpoint
-    accessTokenUrl = tokenEndpoint
+    // eslint-disable-next-line camelcase
+    authUrl = authorization_endpoint
+    // eslint-disable-next-line camelcase
+    accessTokenUrl = token_endpoint
   }
 
   // Store oauth information
-  localStorage.setItem("tokenEndpoint", accessTokenUrl)
-  localStorage.setItem("client_id", clientId)
+  setLocalConfig("tokenEndpoint", accessTokenUrl)
+  setLocalConfig("client_id", clientId)
 
   // Create and store a random state value
   const state = generateRandomString()
-  localStorage.setItem("pkce_state", state)
+  setLocalConfig("pkce_state", state)
 
   // Create and store a new PKCE codeVerifier (the plaintext random secret)
   const codeVerifier = generateRandomString()
-  localStorage.setItem("pkce_codeVerifier", codeVerifier)
+  setLocalConfig("pkce_codeVerifier", codeVerifier)
 
   // Hash and base64-urlencode the secret to use as the challenge
   const codeChallenge = await pkceChallengeFromVerifier(codeVerifier)
@@ -177,9 +184,9 @@ const tokenRequest = async ({
       scope
     )}&redirect_uri=${encodeURIComponent(
       redirectUri
-    )}&codeChallenge=${encodeURIComponent(
+    )}&code_challenge=${encodeURIComponent(
       codeChallenge
-    )}&codeChallenge_method=S256`
+    )}&code_challenge_method=S256`
 
   // Redirect to the authorization server
   window.location = buildUrl()
@@ -191,10 +198,10 @@ const tokenRequest = async ({
  * Handle the redirect back from the authorization server and
  * get an access token from the token endpoint
  *
- * @returns {Object}
+ * @returns {Promise<any | void>}
  */
 
-const oauthRedirect = async () => {
+const oauthRedirect = () => {
   let tokenResponse = ""
   const q = parseQueryString(window.location.search.substring(1))
   // Check if the server returned an error string
@@ -204,33 +211,32 @@ const oauthRedirect = async () => {
   // If the server returned an authorization code, attempt to exchange it for an access token
   if (q.code) {
     // Verify state matches what we set at the beginning
-    if (localStorage.getItem("pkce_state") !== q.state) {
+    if (getLocalConfig("pkce_state") !== q.state) {
       alert("Invalid state")
+      Promise.reject(tokenResponse)
     } else {
       try {
         // Exchange the authorization code for an access token
-        tokenResponse = await sendPostRequest(
-          localStorage.getItem("tokenEndpoint"),
-          {
-            grant_type: "authorization_code",
-            code: q.code,
-            client_id: localStorage.getItem("client_id"),
-            redirect_uri: redirectUri,
-            codeVerifier: localStorage.getItem("pkce_codeVerifier"),
-          }
-        )
-      } catch (err) {
-        console.log(`${error.error}\n\n${error.error_description}`)
+        tokenResponse = sendPostRequest(getLocalConfig("tokenEndpoint"), {
+          grant_type: "authorization_code",
+          code: q.code,
+          client_id: getLocalConfig("client_id"),
+          redirect_uri: redirectUri,
+          code_verifier: getLocalConfig("pkce_codeVerifier"),
+        })
+      } catch (e) {
+        console.error(e)
+        return Promise.reject(tokenResponse)
       }
     }
     // Clean these up since we don't need them anymore
-    localStorage.removeItem("pkce_state")
-    localStorage.removeItem("pkce_codeVerifier")
-    localStorage.removeItem("tokenEndpoint")
-    localStorage.removeItem("client_id")
+    removeLocalConfig("pkce_state")
+    removeLocalConfig("pkce_codeVerifier")
+    removeLocalConfig("tokenEndpoint")
+    removeLocalConfig("client_id")
     return tokenResponse
   }
-  return tokenResponse
+  return Promise.reject(tokenResponse)
 }
 
 export { tokenRequest, oauthRedirect }

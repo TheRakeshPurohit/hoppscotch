@@ -1,51 +1,38 @@
 <template>
-  <SmartModal v-if="show" @close="hideModal">
-    <div slot="header">
-      <ul>
-        <li>
-          <div class="row-wrapper">
-            <h3 class="title">{{ $t("new_team") }}</h3>
-            <div>
-              <button class="icon" @click="hideModal">
-                <i class="material-icons">close</i>
-              </button>
-            </div>
-          </div>
-        </li>
-      </ul>
-    </div>
-    <div slot="body">
-      <ul>
-        <li>
-          <input
-            v-model="name"
-            type="text"
-            :placeholder="$t('my_new_team')"
-            @keyup.enter="addNewTeam"
-          />
-        </li>
-      </ul>
-    </div>
-    <div slot="footer">
-      <div class="row-wrapper">
-        <span></span>
-        <span>
-          <button class="icon" @click="hideModal">
-            {{ $t("cancel") }}
-          </button>
-          <button class="icon primary" @click="addNewTeam">
-            {{ $t("save") }}
-          </button>
-        </span>
+  <SmartModal v-if="show" :title="$t('team.new')" @close="hideModal">
+    <template #body>
+      <div class="flex flex-col px-2">
+        <input
+          id="selectLabelTeamAdd"
+          v-model="name"
+          v-focus
+          class="input floating-input"
+          placeholder=" "
+          type="text"
+          @keyup.enter="addNewTeam"
+        />
+        <label for="selectLabelTeamAdd">
+          {{ $t("action.label") }}
+        </label>
       </div>
-    </div>
+    </template>
+    <template #footer>
+      <span>
+        <ButtonPrimary :label="$t('action.save')" @click.native="addNewTeam" />
+        <ButtonSecondary
+          :label="$t('action.cancel')"
+          @click.native="hideModal"
+        />
+      </span>
+    </template>
   </SmartModal>
 </template>
 
 <script>
+import { defineComponent } from "@nuxtjs/composition-api"
 import * as teamUtils from "~/helpers/teams/utils"
 
-export default {
+export default defineComponent({
   props: {
     show: Boolean,
   },
@@ -60,9 +47,15 @@ export default {
       const name = this.name
       // We clear it early to give the UI a snappy feel
       this.name = ""
-      if (name != null && name.replace(/\s/g, "").length < 6) {
-        this.$toast.error(this.$t("string_length_insufficient"), {
-          icon: "error",
+      if (!name) {
+        this.$toast.error(this.$t("empty.team_name"), {
+          icon: "error_outline",
+        })
+        return
+      }
+      if (name !== null && name.replace(/\s/g, "").length < 6) {
+        this.$toast.error(this.$t("team.name_length_insufficient"), {
+          icon: "error_outline",
         })
         return
       }
@@ -70,12 +63,10 @@ export default {
       teamUtils
         .createTeam(this.$apollo, name)
         .then(() => {
-          // Result
           this.hideModal()
         })
-        .catch((error) => {
-          // Error
-          console.error(error)
+        .catch((e) => {
+          console.error(e)
           // We restore the initial user input
           this.name = name
         })
@@ -86,5 +77,5 @@ export default {
       this.$emit("hide-modal")
     },
   },
-}
+})
 </script>

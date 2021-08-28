@@ -1,35 +1,46 @@
 <template>
-  <div>
-    <button v-close-popover class="icon" @click="logout">
-      <i class="material-icons">exit_to_app</i>
-      <span>{{ $t("logout") }}</span>
-    </button>
+  <div class="flex">
+    <SmartItem
+      svg="log-out"
+      :label="$t('auth.logout')"
+      @click.native="
+        $emit('confirm-logout')
+        confirmLogout = true
+      "
+    />
+    <SmartConfirmModal
+      :show="confirmLogout"
+      :title="$t('confirm.logout')"
+      @hide-modal="confirmLogout = false"
+      @resolve="logout"
+    />
   </div>
 </template>
 
-<script>
-import { fb } from "~/helpers/fb"
+<script lang="ts">
+import { defineComponent } from "@nuxtjs/composition-api"
+import { signOutUser } from "~/helpers/fb/auth"
 
-export default {
+export default defineComponent({
   data() {
     return {
-      fb,
+      confirmLogout: false,
     }
   },
   methods: {
     async logout() {
       try {
-        await fb.signOutUser()
-
-        this.$toast.info(this.$t("logged_out"), {
+        await signOutUser()
+        this.$toast.success(this.$t("auth.logged_out").toString(), {
           icon: "vpn_key",
         })
-      } catch (err) {
-        this.$toast.show(err.message || err, {
-          icon: "error",
+      } catch (e) {
+        console.error(e)
+        this.$toast.error(this.$t("error.something_went_wrong").toString(), {
+          icon: "error_outline",
         })
       }
     },
   },
-}
+})
 </script>

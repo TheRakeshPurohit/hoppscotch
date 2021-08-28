@@ -13,6 +13,7 @@
       @keyup="updateSuggestions"
       @click="updateSuggestions"
       @keydown="handleKeystroke"
+      @change="$emit('change', $event)"
     />
     <ul
       v-if="suggestions.length > 0 && suggestionsVisible"
@@ -21,7 +22,7 @@
     >
       <li
         v-for="(suggestion, index) in suggestions"
-        :key="index"
+        :key="`suggestion-${index}`"
         :class="{ active: currentSuggestionIndex === index }"
         @click.prevent="forceSuggestion(suggestion)"
       >
@@ -32,7 +33,9 @@
 </template>
 
 <script>
-export default {
+import { defineComponent } from "@nuxtjs/composition-api"
+
+export default defineComponent({
   props: {
     spellcheck: {
       type: Boolean,
@@ -180,12 +183,13 @@ export default {
       }
     },
   },
-}
+})
 </script>
 
 <style scoped lang="scss">
 .autocomplete-wrapper {
   @apply relative;
+  @apply contents;
 
   input:focus + ul.suggestions,
   ul.suggestions:hover {
@@ -194,27 +198,21 @@ export default {
 
   ul.suggestions {
     @apply hidden;
-    @apply bg-primary;
+    @apply bg-popover;
     @apply absolute;
     @apply mx-2;
     @apply left-0;
     @apply z-50;
-    @apply transition;
-    @apply ease-in-out;
-    @apply duration-150;
     @apply shadow-lg;
 
-    top: calc(100% - 8px);
+    top: calc(100% - 4px);
     border-radius: 0 0 8px 8px;
 
     li {
       @apply w-full;
       @apply block;
-      @apply py-2;
-      @apply px-4;
-      @apply text-sm;
-      @apply font-mono;
-      @apply font-normal;
+      @apply py-2 px-4;
+      @apply text-secondary;
 
       &:last-child {
         border-radius: 0 0 8px 8px;
@@ -223,7 +221,7 @@ export default {
       &:hover,
       &.active {
         @apply bg-accent;
-        @apply text-primary;
+        @apply text-accentContrast;
         @apply cursor-pointer;
       }
     }

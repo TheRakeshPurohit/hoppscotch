@@ -10,14 +10,16 @@ import "ace-builds/webpack-resolver"
 import "ace-builds/src-noconflict/ext-language_tools"
 import "ace-builds/src-noconflict/mode-graphqlschema"
 import * as esprima from "esprima"
+import { defineComponent } from "@nuxtjs/composition-api"
 import debounce from "~/helpers/utils/debounce"
 import {
   getPreRequestScriptCompletions,
   getTestScriptCompletions,
   performPreRequestLinting,
+  performTestLinting,
 } from "~/helpers/tern"
 
-export default {
+export default defineComponent({
   props: {
     value: {
       type: String,
@@ -49,6 +51,14 @@ export default {
       editor: null,
       cacheValue: "",
     }
+  },
+
+  computed: {
+    appFontSize() {
+      return getComputedStyle(document.documentElement).getPropertyValue(
+        "--body-font-size"
+      )
+    },
   },
 
   watch: {
@@ -95,9 +105,11 @@ export default {
         })
         .catch(() => {
           // nextTIck shouldn't really ever throw but still
-          this.initalized = true
+          this.initialized = true
         })
     })
+
+    editor.setFontSize(this.appFontSize)
 
     const completer = {
       getCompletions: (
@@ -177,7 +189,12 @@ export default {
     provideLinting: debounce(function (code) {
       let results = []
 
-      performPreRequestLinting(code)
+      const lintFunc =
+        this.completeMode === "pre"
+          ? performPreRequestLinting
+          : performTestLinting
+
+      lintFunc(code)
         .then((semanticLints) => {
           results = results.concat(
             semanticLints.map((lint) => ({
@@ -259,13 +276,11 @@ export default {
         })
     }, 2000),
   },
-}
+})
 </script>
 
-<style lang="scss">
+<style scoped lang="scss">
 .show-if-initialized {
-  @apply opacity-0;
-
   &.initialized {
     @apply opacity-100;
   }

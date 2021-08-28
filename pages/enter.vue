@@ -1,42 +1,53 @@
 <template>
-  <div class="flex container flex-col min-h-screen">
-    <span v-if="signingInWithEmail" class="info">{{ $t("loading") }}</span>
-    <span v-else class="info">{{ $t("waiting_for_connection") }}</span>
+  <div class="flex flex-col min-h-screen items-center justify-center">
+    <SmartSpinner v-if="signingInWithEmail" />
+    <SmartLoadingIndicator v-else />
     <pre v-if="error">{{ error }}</pre>
   </div>
 </template>
 
-<script>
-import { fb } from "~/helpers/fb"
+<script lang="ts">
+import { defineComponent } from "@nuxtjs/composition-api"
+import { initializeFirebase } from "~/helpers/fb"
+import { isSignInWithEmailLink, signInWithEmailLink } from "~/helpers/fb/auth"
+import { getLocalConfig, removeLocalConfig } from "~/newstore/localpersistence"
 
-export default {
+export default defineComponent({
+  layout: "empty",
   data() {
     return {
       signingInWithEmail: false,
       error: null,
     }
   },
+  beforeMount() {
+    initializeFirebase()
+  },
   async mounted() {
-    if (fb.isSignInWithEmailLink(window.location.href)) {
+    if (isSignInWithEmailLink(window.location.href)) {
       this.signingInWithEmail = true
-      let email = window.localStorage.getItem("emailForSignIn")
+
+      let email = getLocalConfig("emailForSignIn")
+
       if (!email) {
-        email = window.prompt("Please provide your email for confirmation")
+        email = window.prompt(
+          "Please provide your email for confirmation"
+        ) as string
       }
-      await fb
-        .signInWithEmailLink(email, window.location.href)
+
+      await signInWithEmailLink(email, window.location.href)
         .then(() => {
-          window.localStorage.removeItem("emailForSignIn")
+          removeLocalConfig("emailForSignIn")
           this.$router.push({ path: "/" })
         })
-        .catch((error) => {
+        .catch((e) => {
           this.signingInWithEmail = false
-          this.error = error.message
+          this.error = e.message
         })
         .finally(() => {
           this.signingInWithEmail = false
         })
     }
   },
-}
+})
 </script>
